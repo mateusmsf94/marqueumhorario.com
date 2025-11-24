@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+monday_schedule:
+  day_of_week: 1
+  opening_time: "09:00:00"
+  closing_time: "17:00:00"
+  appointment_duration_minutes: 60
+  buffer_minutes_between_appointments: 15
+  is_active: true

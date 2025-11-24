@@ -1,7 +1,174 @@
 require "test_helper"
 
 class AppointmentTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+  # Presence validations
+  test "should not save appointment without title" do
+    appointment = Appointment.new(scheduled_at: 1.day.from_now)
+    assert_not appointment.save, "Saved appointment without a title"
+    assert_includes appointment.errors[:title], "can't be blank"
+  end
+
+  test "should not save appointment without scheduled_at" do
+    appointment = Appointment.new(title: "Doctor Visit")
+    assert_not appointment.save, "Saved appointment without scheduled_at"
+    assert_includes appointment.errors[:scheduled_at], "can't be blank"
+  end
+
+  test "should save valid appointment" do
+    appointment = appointments(:pending_appointment)
+    assert appointment.persisted?, "Fixture appointment should be valid"
+    assert_equal "Doctor Visit", appointment.title
+    assert_equal "Annual checkup", appointment.description
+  end
+
+  # Length validations
+  test "should not save appointment with title longer than 255 characters" do
+    appointment = Appointment.new(
+      title: "a" * 256,
+      scheduled_at: 1.day.from_now
+    )
+    assert_not appointment.save, "Saved appointment with title too long"
+    assert_includes appointment.errors[:title], "is too long (maximum is 255 characters)"
+  end
+
+  test "should save appointment with title at maximum length" do
+    appointment = appointments(:max_length_title)
+    assert appointment.persisted?, "Failed to save appointment with title at max length"
+    assert_equal 255, appointment.title.length
+  end
+
+  # Status enum
+  test "should have default status of pending" do
+    appointment = appointments(:pending_appointment)
+    assert_equal "pending", appointment.status
+  end
+
+  test "should allow valid status values" do
+    appointment = appointments(:pending_appointment)
+
+    appointment.confirmed!
+    assert_equal "confirmed", appointment.status
+
+    appointment.cancelled!
+    assert_equal "cancelled", appointment.status
+
+    appointment.completed!
+    assert_equal "completed", appointment.status
+  end
+
+  test "should not allow invalid status values" do
+    appointment = appointments(:pending_appointment)
+
+    assert_raises(ActiveRecord::RecordInvalid) do
+      appointment.update!(status: "invalid_status")
+    end
+  end
+
+  # Custom validations
+  test "should not create appointment with past scheduled_at" do
+    appointment = Appointment.new(
+      title: "Past Appointment",
+      scheduled_at: 1.day.ago
+    )
+    assert_not appointment.save, "Saved appointment with past date"
+    assert_includes appointment.errors[:scheduled_at], "can't be in the past"
+  end
+
+  test "should allow updating existing appointment to past date" do
+    appointment = Appointment.create!(
+      title: "Future Appointment",
+      scheduled_at: 1.day.from_now
+    )
+
+    # Travel to future and update
+    travel 2.days do
+      appointment.title = "Updated Title"
+      assert appointment.save, "Failed to update existing appointment"
+    end
+  end
+
+  # UUID generation
+  test "should automatically generate UUID for id" do
+    appointment = appointments(:pending_appointment)
+
+    assert_not_nil appointment.id, "ID was not generated"
+    assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/,
+                 appointment.id, "ID is not a valid UUID")
+  end
+
+  test "should have unique UUIDs for different appointments" do
+    appointment1 = appointments(:pending_appointment)
+    appointment2 = appointments(:confirmed_appointment)
+
+    assert_not_equal appointment1.id, appointment2.id, "UUIDs are not unique"
+  end
+
+  # Scopes
+  test "upcoming scope should return future appointments" do
+    future_apt = appointments(:pending_appointment)
+    past_apt = appointments(:past_appointment)
+
+    upcoming = Appointment.upcoming
+    assert_includes upcoming, future_apt
+    assert_not_includes upcoming, past_apt
+  end
+
+  test "past scope should return past appointments" do
+    future_apt = appointments(:pending_appointment)
+    past_apt = appointments(:past_appointment)
+
+    past = Appointment.past
+    assert_includes past, past_apt
+    assert_not_includes past, future_apt
+  end
+
+  test "by_status scope should filter by status" do
+    confirmed_apt = appointments(:confirmed_appointment)
+    pending_apt = appointments(:pending_appointment)
+
+    confirmed_appointments = Appointment.by_status(:confirmed)
+    assert_includes confirmed_appointments, confirmed_apt
+    assert_not_includes confirmed_appointments, pending_apt
+  end
+
+  test "today scope should return appointments scheduled for today" do
+    today_apt = appointments(:today_appointment)
+    tomorrow_apt = appointments(:tomorrow_appointment)
+
+    today_appointments = Appointment.today
+    assert_includes today_appointments, today_apt
+    assert_not_includes today_appointments, tomorrow_apt
+  end
+
+  # Optimistic locking
+  test "should have lock_version initialized to 0" do
+    appointment = appointments(:pending_appointment)
+
+    assert_equal 0, appointment.lock_version
+  end
+
+  test "should increment lock_version on update" do
+    appointment = appointments(:pending_appointment)
+
+    initial_version = appointment.lock_version
+    appointment.update!(title: "Updated Title")
+
+    assert_equal initial_version + 1, appointment.lock_version
+  end
+
+  test "should raise stale object error on concurrent update" do
+    appointment = appointments(:pending_appointment)
+
+    # Simulate two users loading the same appointment
+    user1_appointment = Appointment.find(appointment.id)
+    user2_appointment = Appointment.find(appointment.id)
+
+    # User 1 updates first
+    user1_appointment.update!(title: "User 1 Update")
+
+    # User 2 tries to update - should fail
+    assert_raises(ActiveRecord::StaleObjectError) do
+      user2_appointment.update!(title: "User 2 Update")
+    end
+  end
 end
