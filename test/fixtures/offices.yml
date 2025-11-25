@@ -1,0 +1,35 @@
+main_office:
+  name: "Main Office"
+  description: "Primary location in downtown Manhattan"
+  time_zone: "America/New_York"
+  is_active: true
+  address: "123 Broadway"
+  city: "New York"
+  state: "NY"
+  zip_code: "10001"
+  latitude: 40.750556
+  longitude: -73.993611
+
+west_coast_office:
+  name: "West Coast Office"
+  description: "California branch office"
+  time_zone: "America/Los_Angeles"
+  is_active: true
+  address: "456 Sunset Blvd"
+  city: "Los Angeles"
+  state: "CA"
+  zip_code: "90028"
+  latitude: 34.098333
+  longitude: -118.326944
+
+inactive_office:
+  name: "Closed Location"
+  description: "This office has been closed"
+  time_zone: "America/Chicago"
+  is_active: false
+  address: "789 Main St"
+  city: "Chicago"
+  state: "IL"
+  zip_code: "60601"
+  latitude: 41.878113
+  longitude: -87.629799

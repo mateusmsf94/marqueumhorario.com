@@ -1,5 +1,16 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# Sunday (0)
+sunday_schedule:
+  day_of_week: 0
+  opening_time: "10:00:00"
+  closing_time: "14:00:00"
+  appointment_duration_minutes: 30
+  buffer_minutes_between_appointments: 10
+  is_active: true
+  office: main_office
+
+# Monday (1)
 monday_schedule:
   day_of_week: 1
   opening_time: "09:00:00"
@@ -7,3 +18,74 @@ monday_schedule:
   appointment_duration_minutes: 60
   buffer_minutes_between_appointments: 15
   is_active: true
+  office: main_office
+
+# Tuesday (2)
+tuesday_schedule:
+  day_of_week: 2
+  opening_time: "09:00:00"
+  closing_time: "17:00:00"
+  appointment_duration_minutes: 60
+  buffer_minutes_between_appointments: 15
+  is_active: true
+  office: main_office
+
+# Wednesday (3)
+wednesday_schedule:
+  day_of_week: 3
+  opening_time: "09:00:00"
+  closing_time: "17:00:00"
+  appointment_duration_minutes: 60
+  buffer_minutes_between_appointments: 15
+  is_active: true
+  office: main_office
+
+# Thursday (4)
+thursday_schedule:
+  day_of_week: 4
+  opening_time: "09:00:00"
+  closing_time: "17:00:00"
+  appointment_duration_minutes: 60
+  buffer_minutes_between_appointments: 15
+  is_active: true
+  office: main_office
+
+# Friday (5)
+friday_schedule:
+  day_of_week: 5
+  opening_time: "09:00:00"
+  closing_time: "17:00:00"
+  appointment_duration_minutes: 60
+  buffer_minutes_between_appointments: 15
+  is_active: true
+  office: main_office
+
+# Saturday (6) - Half day
+saturday_schedule:
+  day_of_week: 6
+  opening_time: "09:00:00"
+  closing_time: "13:00:00"
+  appointment_duration_minutes: 45
+  buffer_minutes_between_appointments: 15
+  is_active: true
+  office: main_office
+
+# Inactive schedule for testing
+inactive_monday_schedule:
+  day_of_week: 1
+  opening_time: "08:00:00"
+  closing_time: "16:00:00"
+  appointment_duration_minutes: 30
+  buffer_minutes_between_appointments: 10
+  is_active: false
+  office: main_office
+
+# West Coast Office schedules
+west_coast_monday_schedule:
+  day_of_week: 1
+  opening_time: "08:00:00"
+  closing_time: "16:00:00"
+  appointment_duration_minutes: 60
+  buffer_minutes_between_appointments: 15
+  is_active: true
+  office: west_coast_office

@@ -6,22 +6,26 @@ pending_appointment:
   scheduled_at: <%= 1.day.from_now %>
   description: Annual checkup
   status: pending
+  office: main_office
 
 confirmed_appointment:
   title: Dentist Appointment
   scheduled_at: <%= 2.days.from_now %>
   description: Teeth cleaning
   status: confirmed
+  office: main_office
 
 cancelled_appointment:
   title: Cancelled Meeting
   scheduled_at: <%= 3.days.from_now %>
   status: cancelled
+  office: main_office
 
 completed_appointment:
   title: Past Completed
   scheduled_at: <%= 1.day.ago %>
   status: completed
+  office: main_office
 
 # Today's appointment
 today_appointment:
@@ -29,32 +33,17 @@ today_appointment:
   scheduled_at: <%= Time.current.end_of_day - 1.hour %>
   description: Important meeting today
   status: pending
-
-# Tomorrow's appointment
-tomorrow_appointment:
-  title: Tomorrow's Task
-  scheduled_at: <%= 1.day.from_now %>
-  status: pending
+  office: main_office
 
 # Past appointment (for scope testing)
 past_appointment:
   title: Past Appointment
   scheduled_at: <%= 1.day.ago %>
   status: pending
-
-# Edge cases
-max_length_title:
-  title: <%= 'a' * 255 %>
-  scheduled_at: <%= 1.day.from_now %>
-  status: pending
-
-with_long_description:
-  title: Appointment with Description
-  scheduled_at: <%= 2.days.from_now %>
-  description: <%= 'Lorem ipsum ' * 100 %>
-  status: pending
+  office: main_office
 
 next_monday_appointment:
   title: Next Monday Meeting
   scheduled_at: <%= Date.today.next_occurring(:monday).to_datetime.change(hour: 10, min: 0, sec: 0) %>
   status: "pending"
+  office: main_office

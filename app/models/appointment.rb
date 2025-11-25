@@ -1,5 +1,13 @@
 class Appointment < ApplicationRecord
+  # Associations
+  belongs_to :office
+
+  # Concerns
+  include TemporalScopes
+  temporal_scope_field :scheduled_at
+
   # Validations
+  validates :office_id, presence: true
   validates :title, presence: true, length: { maximum: 255 }
   validates :scheduled_at, presence: true
   validates :status, presence: true
@@ -15,11 +23,9 @@ class Appointment < ApplicationRecord
   # Custom validations
   validate :scheduled_at_cannot_be_in_the_past, on: :create
 
-  # Scopes
-  scope :upcoming, -> { where("scheduled_at >= ?", Time.current).order(scheduled_at: :asc) }
-  scope :past, -> { where("scheduled_at < ?", Time.current).order(scheduled_at: :desc) }
+  # Additional scopes (not provided by TemporalScopes)
   scope :by_status, ->(status) { where(status: status) }
-  scope :today, -> { where(scheduled_at: Time.current.all_day) }
+  scope :for_office, ->(office_id) { where(office_id: office_id) }
 
   private
 

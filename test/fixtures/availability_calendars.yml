@@ -1,13 +1,15 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  office: main_office
   period_start: 2025-11-24 18:35:30
   period_end: 2025-11-24 18:35:30
-  available_periods: 
-  busy_periods: 
+  available_periods:
+  busy_periods:
 
 two:
+  office: west_coast_office
   period_start: 2025-11-24 18:35:30
   period_end: 2025-11-24 18:35:30
-  available_periods: 
+  available_periods:
   busy_periods: 

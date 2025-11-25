@@ -3,13 +3,13 @@ require "test_helper"
 class AppointmentTest < ActiveSupport::TestCase
   # Presence validations
   test "should not save appointment without title" do
-    appointment = Appointment.new(scheduled_at: 1.day.from_now)
+    appointment = Appointment.new(scheduled_at: 1.day.from_now, office: offices(:main_office))
     assert_not appointment.save, "Saved appointment without a title"
     assert_includes appointment.errors[:title], "can't be blank"
   end
 
   test "should not save appointment without scheduled_at" do
-    appointment = Appointment.new(title: "Doctor Visit")
+    appointment = Appointment.new(title: "Doctor Visit", office: offices(:main_office))
     assert_not appointment.save, "Saved appointment without scheduled_at"
     assert_includes appointment.errors[:scheduled_at], "can't be blank"
   end
@@ -25,14 +25,20 @@ class AppointmentTest < ActiveSupport::TestCase
   test "should not save appointment with title longer than 255 characters" do
     appointment = Appointment.new(
       title: "a" * 256,
-      scheduled_at: 1.day.from_now
+      scheduled_at: 1.day.from_now,
+      office: offices(:main_office)
     )
     assert_not appointment.save, "Saved appointment with title too long"
     assert_includes appointment.errors[:title], "is too long (maximum is 255 characters)"
   end
 
   test "should save appointment with title at maximum length" do
-    appointment = appointments(:max_length_title)
+    appointment = Appointment.create!(
+      title: "a" * 255,
+      scheduled_at: 1.day.from_now,
+      status: :pending,
+      office: offices(:main_office)
+    )
     assert appointment.persisted?, "Failed to save appointment with title at max length"
     assert_equal 255, appointment.title.length
   end
@@ -68,7 +74,8 @@ class AppointmentTest < ActiveSupport::TestCase
   test "should not create appointment with past scheduled_at" do
     appointment = Appointment.new(
       title: "Past Appointment",
-      scheduled_at: 1.day.ago
+      scheduled_at: 1.day.ago,
+      office: offices(:main_office)
     )
     assert_not appointment.save, "Saved appointment with past date"
     assert_includes appointment.errors[:scheduled_at], "can't be in the past"
@@ -77,7 +84,8 @@ class AppointmentTest < ActiveSupport::TestCase
   test "should allow updating existing appointment to past date" do
     appointment = Appointment.create!(
       title: "Future Appointment",
-      scheduled_at: 1.day.from_now
+      scheduled_at: 1.day.from_now,
+      office: offices(:main_office)
     )
 
     # Travel to future and update
@@ -133,7 +141,8 @@ class AppointmentTest < ActiveSupport::TestCase
 
   test "today scope should return appointments scheduled for today" do
     today_apt = appointments(:today_appointment)
-    tomorrow_apt = appointments(:tomorrow_appointment)
+    # Use pending_appointment instead of tomorrow_appointment (they're equivalent)
+    tomorrow_apt = appointments(:pending_appointment)
 
     today_appointments = Appointment.today
     assert_includes today_appointments, today_apt
@@ -170,5 +179,29 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::StaleObjectError) do
       user2_appointment.update!(title: "User 2 Update")
     end
+  end
+
+  # Office association
+  test "should belong to office" do
+    appointment = appointments(:pending_appointment)
+    assert_respond_to appointment, :office
+    assert_instance_of Office, appointment.office
+  end
+
+  test "should not save without office" do
+    appointment = Appointment.new(
+      title: "Test Appointment",
+      scheduled_at: 1.day.from_now,
+      office_id: nil
+    )
+    assert_not appointment.save
+    assert_includes appointment.errors[:office], "must exist"
+  end
+
+  test "for_office scope should filter by office" do
+    main_office_apts = Appointment.for_office(offices(:main_office).id)
+
+    assert main_office_apts.all? { |apt| apt.office_id == offices(:main_office).id }
+    assert main_office_apts.count > 0, "Should have appointments for main office"
   end
 end

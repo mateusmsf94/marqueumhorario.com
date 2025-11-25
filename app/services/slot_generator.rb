@@ -2,13 +2,15 @@
 
 class SlotGenerator
   # Using Struct for a lightweight value object for a slot
-  AvailableSlot = Struct.new(:start_time, :end_time, :status, keyword_init: true)
+  AvailableSlot = Struct.new(:start_time, :end_time, :status, :office_id, keyword_init: true)
 
   # @param work_schedules [Array<WorkSchedule>, WorkSchedule] the schedule rules to use
   # @param appointments [ActiveRecord::Relation<Appointment>] appointments to check against
-  def initialize(work_schedules, appointments)
+  # @param office_id [String] optional office_id for filtering (defaults to work_schedule's office)
+  def initialize(work_schedules, appointments, office_id: nil)
     @work_schedules = Array(work_schedules)
     @appointments = appointments
+    @office_id = office_id || @work_schedules.first&.office_id
     @duration = @work_schedules.first&.appointment_duration_minutes&.minutes
   end
 
@@ -19,9 +21,12 @@ class SlotGenerator
   def call(start_date, end_date)
     return [] if @work_schedules.empty? || @duration.nil?
 
+    # Ensure we're only working with schedules for this office
+    office_schedules = @work_schedules.select { |ws| ws.office_id == @office_id }
+
     slots = []
     (start_date.to_date..end_date.to_date).each do |date|
-      work_schedule = @work_schedules.find { |ws| ws.day_of_week == date.wday }
+      work_schedule = office_schedules.find { |ws| ws.day_of_week == date.wday }
       next unless work_schedule
 
       slots.concat(generate_slots_for_day(date, work_schedule))
@@ -40,25 +45,25 @@ class SlotGenerator
     while slot_start_time + @duration <= day_end_time
       slot_end_time = slot_start_time + @duration
 
-      status = check_availability(slot_start_time, slot_end_time)
+      status = check_availability(slot_start_time, slot_end_time, work_schedule.buffer_minutes_between_appointments)
 
-      slots << AvailableSlot.new(start_time: slot_start_time, end_time: slot_end_time, status: status)
+      slots << AvailableSlot.new(
+        start_time: slot_start_time,
+        end_time: slot_end_time,
+        status: status,
+        office_id: @office_id
+      )
 
       slot_start_time += total_slot_duration
     end
     slots
   end
 
-  def check_availability(start_time, end_time)
-    is_busy = @appointments.any? do |appointment|
-      appointment_starts = appointment.scheduled_at
-      # Assumption: appointment duration is the same as the slot duration from the work schedule.
-      appointment_ends = appointment_starts + @duration
-
-      # Standard overlap check: (StartA < EndB) and (EndA > StartB)
-      (appointment_starts < end_time) && (appointment_ends > start_time)
-    end
-
+  def check_availability(start_time, end_time, buffer_minutes)
+    office_appointments = @appointments.select { |apt| apt.office_id == @office_id }
+    checker = OverlapChecker.new(office_appointments, duration: @duration)
+    effective_end_time = end_time + buffer_minutes.minutes
+    is_busy = checker.any_overlap?(start_time, effective_end_time)
     is_busy ? "busy" : "available"
   end
 end
