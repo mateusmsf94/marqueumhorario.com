@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+john_main_office:
+  user: provider_john
+  office: main_office
+  role: "owner"
+  is_active: true
+
+jane_main_office:
+  user: provider_jane
+  office: main_office
+  role: "member"
+  is_active: true
+
+john_west_coast:
+  user: provider_john
+  office: west_coast_office
+  role: "admin"
+  is_active: true

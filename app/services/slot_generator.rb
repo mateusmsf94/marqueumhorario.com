@@ -9,8 +9,8 @@ class SlotGenerator
   # @param office_id [String] optional office_id for filtering (defaults to work_schedule's office)
   def initialize(work_schedules, appointments, office_id: nil)
     @work_schedules = Array(work_schedules)
-    @appointments = appointments
     @office_id = office_id || @work_schedules.first&.office_id
+    @appointments = appointments.select { |apt| apt.office_id == @office_id }
     @duration = @work_schedules.first&.appointment_duration_minutes&.minutes
   end
 
@@ -60,8 +60,7 @@ class SlotGenerator
   end
 
   def check_availability(start_time, end_time, buffer_minutes)
-    office_appointments = @appointments.select { |apt| apt.office_id == @office_id }
-    checker = OverlapChecker.new(office_appointments, duration: @duration)
+    checker = OverlapChecker.new(@appointments, duration: @duration)
     effective_end_time = end_time + buffer_minutes.minutes
     is_busy = checker.any_overlap?(start_time, effective_end_time)
     is_busy ? "busy" : "available"

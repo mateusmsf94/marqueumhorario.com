@@ -4,6 +4,11 @@ class Office < ApplicationRecord
   has_many :work_schedules, dependent: :restrict_with_error
   has_many :availability_calendars, dependent: :restrict_with_error
 
+  # User associations (providers who manage this office)
+  has_many :office_memberships, dependent: :destroy
+  has_many :users, through: :office_memberships
+  has_many :providers, -> { where(user_type: "provider") }, through: :office_memberships, source: :user
+
   # Geocoding (after adding geocoder gem)
   geocoded_by :full_address
   after_validation :geocode_if_needed
@@ -35,6 +40,25 @@ class Office < ApplicationRecord
   scope :by_city, ->(city) { where(city: city) }
   scope :by_state, ->(state) { where(state: state) }
   scope :geocoded, -> { where.not(latitude: nil, longitude: nil) }
+
+  # Instance methods for managing office memberships
+  def managed_by?(user)
+    return false unless user&.provider?
+    users.exists?(user.id)
+  end
+
+  def add_manager(user)
+    return false unless user&.provider?
+    users << user unless managed_by?(user)
+  end
+
+  def remove_manager(user)
+    users.delete(user)
+  end
+
+  def active_managers
+    users.where(office_memberships: { is_active: true })
+  end
 
   private
 

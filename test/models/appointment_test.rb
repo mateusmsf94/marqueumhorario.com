@@ -204,4 +204,79 @@ class AppointmentTest < ActiveSupport::TestCase
     assert main_office_apts.all? { |apt| apt.office_id == offices(:main_office).id }
     assert main_office_apts.count > 0, "Should have appointments for main office"
   end
+
+  # Provider association tests
+  test "should allow provider to be assigned to appointment" do
+    provider = users(:provider_john)
+    office = offices(:main_office)
+    customer = users(:customer_alice)
+
+    appointment = Appointment.create!(
+      office: office,
+      customer: customer,
+      provider: provider,
+      title: "Test Appointment",
+      scheduled_at: 2.days.from_now
+    )
+
+    assert_equal provider, appointment.provider
+    assert appointment.persisted?
+  end
+
+  test "should not allow customer as provider" do
+    customer = users(:customer_alice)
+    office = offices(:main_office)
+
+    appointment = Appointment.new(
+      office: office,
+      provider: customer,  # Customer as provider - should fail
+      title: "Test",
+      scheduled_at: 2.days.from_now
+    )
+
+    assert_not appointment.valid?
+    assert_includes appointment.errors[:provider], "must have provider user type"
+  end
+
+  test "should not allow provider from different office" do
+    provider = users(:provider_jane)
+    office = offices(:main_office)
+
+    # Ensure provider doesn't work at main office
+    office.office_memberships.where(user: provider).destroy_all
+
+    appointment = Appointment.new(
+      office: office,
+      provider: provider,  # Provider not at this office
+      title: "Test",
+      scheduled_at: 2.days.from_now
+    )
+
+    assert_not appointment.valid?
+    assert_includes appointment.errors[:provider], "must work at this office"
+  end
+
+  test "provider can have many appointments" do
+    provider = users(:provider_john)
+    assert_respond_to provider, :provider_appointments
+  end
+
+  test "for_provider scope should filter by provider" do
+    provider = users(:provider_john)
+    provider_apts = Appointment.for_provider(provider.id)
+
+    assert provider_apts.all? { |apt| apt.provider_id == provider.id }
+    assert provider_apts.count > 0, "Should have appointments for provider"
+  end
+
+  test "appointment should have both customer and provider" do
+    appointment = appointments(:pending_appointment)
+
+    assert_respond_to appointment, :customer
+    assert_respond_to appointment, :provider
+    assert_instance_of User, appointment.customer
+    assert_instance_of User, appointment.provider
+    assert appointment.customer.customer?
+    assert appointment.provider.provider?
+  end
 end

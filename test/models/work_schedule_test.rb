@@ -9,7 +9,8 @@ class WorkScheduleTest < ActiveSupport::TestCase
       appointment_duration_minutes: 60,
       buffer_minutes_between_appointments: 15,
       is_active: true,
-      office_id: offices(:main_office).id
+      office_id: offices(:main_office).id,
+      provider_id: users(:provider_john).id
     }
   end
 
@@ -135,37 +136,70 @@ class WorkScheduleTest < ActiveSupport::TestCase
   end
 
   # Uniqueness validation
-  test "should not allow multiple active schedules for same day_of_week and office" do
-    # Fixtures already have an active Monday schedule for main_office, so try to create another
-    second_schedule = WorkSchedule.new(valid_attributes.merge(day_of_week: 1, is_active: true, office_id: offices(:main_office).id))
-    assert_not second_schedule.valid?, "Should not allow multiple active schedules for same day and office"
-    assert_includes second_schedule.errors[:day_of_week], "can only have one active schedule per day per office"
+  test "should not allow multiple active schedules for same provider, day, and office" do
+    # Fixtures already have an active Monday schedule for provider_john at main_office
+    # Try to create another active Monday schedule for the same provider at same office
+    second_schedule = WorkSchedule.new(valid_attributes.merge(
+      day_of_week: 1,
+      is_active: true,
+      office_id: offices(:main_office).id,
+      provider_id: users(:provider_john).id
+    ))
+    assert_not second_schedule.valid?, "Should not allow multiple active schedules for same provider, day, and office"
+    assert_includes second_schedule.errors[:day_of_week], "can only have one active schedule per day per provider per office"
   end
 
-  test "should allow multiple inactive schedules for same day_of_week and office" do
-    first_schedule = WorkSchedule.create!(valid_attributes.merge(day_of_week: 1, is_active: false, office_id: offices(:main_office).id))
-    second_schedule = WorkSchedule.new(valid_attributes.merge(day_of_week: 1, is_active: false, office_id: offices(:main_office).id))
+  test "should allow different providers to have active schedules on same day at same office" do
+    # provider_john already has Monday schedule at main_office
+    # provider_jane should be able to create Monday schedule at same office
+    jane_schedule = WorkSchedule.new(valid_attributes.merge(
+      day_of_week: 1,
+      is_active: true,
+      office_id: offices(:main_office).id,
+      provider_id: users(:provider_jane).id
+    ))
 
-    assert second_schedule.valid?, "Should allow multiple inactive schedules for same day and office"
+    assert jane_schedule.valid?, "Different providers should have schedules on same day at same office"
+    assert jane_schedule.save
   end
 
-  test "should allow active and inactive schedules for same day_of_week and office" do
-    # Fixtures already have active Monday schedule for main_office, just create an inactive one
-    inactive_schedule = WorkSchedule.new(valid_attributes.merge(day_of_week: 1, is_active: false, office_id: offices(:main_office).id))
+  test "should allow multiple inactive schedules for same provider, day, and office" do
+    first_schedule = WorkSchedule.create!(valid_attributes.merge(
+      day_of_week: 3,
+      is_active: false,
+      provider_id: users(:provider_john).id
+    ))
+    second_schedule = WorkSchedule.new(valid_attributes.merge(
+      day_of_week: 3,
+      is_active: false,
+      provider_id: users(:provider_john).id
+    ))
 
-    assert inactive_schedule.valid?, "Should allow both active and inactive schedules for same day and office"
+    assert second_schedule.valid?, "Should allow multiple inactive schedules for same provider, day, and office"
   end
 
-  test "should allow same day_of_week active schedule for different offices" do
-    # Main office already has Monday schedule (day 1)
-    # Create Monday schedule for west coast office
+  test "should allow active and inactive schedules for same provider, day, and office" do
+    # Fixtures already have active Monday schedule for provider_john, create an inactive one
+    inactive_schedule = WorkSchedule.new(valid_attributes.merge(
+      day_of_week: 1,
+      is_active: false,
+      provider_id: users(:provider_john).id
+    ))
+
+    assert inactive_schedule.valid?, "Should allow both active and inactive schedules"
+  end
+
+  test "should allow same provider to have active schedules at different offices" do
+    # provider_john already works at main_office and west_coast_office
+    # Create Tuesday schedule for west_coast_office (provider_john already has Tuesday at main_office)
     west_coast_schedule = WorkSchedule.new(valid_attributes.merge(
       day_of_week: 2,
       is_active: true,
-      office_id: offices(:west_coast_office).id
+      office_id: offices(:west_coast_office).id,
+      provider_id: users(:provider_john).id
     ))
 
-    assert west_coast_schedule.valid?, "Should allow same day schedule for different offices"
+    assert west_coast_schedule.valid?, "Same provider should work at different offices on same day"
     assert west_coast_schedule.save
   end
 

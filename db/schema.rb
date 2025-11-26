@@ -10,23 +10,32 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_25_133328) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_26_135931) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
 
   create_table "appointments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.uuid "customer_id"
     t.text "description"
     t.integer "lock_version", default: 0, null: false
     t.uuid "office_id", null: false
+    t.uuid "provider_id"
     t.datetime "scheduled_at", null: false
     t.string "status", limit: 50, default: "pending", null: false
     t.string "title", limit: 255, null: false
     t.datetime "updated_at", null: false
+    t.index ["customer_id", "scheduled_at"], name: "index_appointments_on_customer_id_and_scheduled_at"
+    t.index ["customer_id", "status"], name: "index_appointments_on_customer_id_and_status"
+    t.index ["customer_id"], name: "index_appointments_on_customer_id"
     t.index ["office_id", "scheduled_at"], name: "index_appointments_on_office_id_and_scheduled_at"
     t.index ["office_id", "status"], name: "index_appointments_on_office_id_and_status"
     t.index ["office_id"], name: "index_appointments_on_office_id"
+    t.index ["provider_id", "office_id"], name: "index_appointments_on_provider_id_and_office_id"
+    t.index ["provider_id", "scheduled_at"], name: "index_appointments_on_provider_id_and_scheduled_at"
+    t.index ["provider_id", "status"], name: "index_appointments_on_provider_id_and_status"
+    t.index ["provider_id"], name: "index_appointments_on_provider_id"
     t.index ["scheduled_at"], name: "index_appointments_on_scheduled_at"
     t.index ["status"], name: "index_appointments_on_status"
   end
@@ -41,6 +50,20 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_25_133328) do
     t.datetime "updated_at", null: false
     t.index ["office_id", "period_start"], name: "index_availability_calendars_on_office_id_and_period_start"
     t.index ["office_id"], name: "index_availability_calendars_on_office_id"
+  end
+
+  create_table "office_memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_active", default: true, null: false
+    t.uuid "office_id", null: false
+    t.string "role", limit: 50, default: "member", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "user_id", null: false
+    t.index ["office_id", "is_active"], name: "index_office_memberships_on_office_id_and_is_active"
+    t.index ["office_id"], name: "index_office_memberships_on_office_id"
+    t.index ["user_id", "is_active"], name: "index_office_memberships_on_user_id_and_is_active"
+    t.index ["user_id", "office_id"], name: "index_office_memberships_unique_user_office", unique: true
+    t.index ["user_id"], name: "index_office_memberships_on_user_id"
   end
 
   create_table "offices", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -62,6 +85,31 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_25_133328) do
     t.index ["name"], name: "index_offices_on_name"
   end
 
+  create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "cpf", limit: 11
+    t.datetime "created_at", null: false
+    t.datetime "current_sign_in_at"
+    t.string "current_sign_in_ip", limit: 50
+    t.string "email", limit: 255, default: "", null: false
+    t.string "encrypted_password", limit: 255, default: "", null: false
+    t.string "first_name", limit: 100, null: false
+    t.string "last_name", limit: 100, null: false
+    t.datetime "last_sign_in_at"
+    t.string "last_sign_in_ip", limit: 50
+    t.string "phone", limit: 20
+    t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at"
+    t.string "reset_password_token", limit: 255
+    t.string "roles", default: ["customer"], null: false, array: true
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["cpf"], name: "index_users_on_cpf", unique: true, where: "(cpf IS NOT NULL)"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["last_name", "first_name"], name: "index_users_on_last_name_and_first_name"
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["roles"], name: "index_users_on_roles", using: :gin
+  end
+
   create_table "work_schedules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.integer "appointment_duration_minutes"
     t.integer "buffer_minutes_between_appointments"
@@ -71,13 +119,24 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_25_133328) do
     t.boolean "is_active"
     t.uuid "office_id", null: false
     t.time "opening_time"
+    t.uuid "provider_id"
     t.datetime "updated_at", null: false
+    t.jsonb "work_periods", default: []
     t.index ["office_id", "day_of_week", "is_active"], name: "index_work_schedules_on_office_day_active"
-    t.index ["office_id", "day_of_week", "is_active"], name: "index_work_schedules_unique_active_per_office_day", unique: true, where: "(is_active = true)"
     t.index ["office_id"], name: "index_work_schedules_on_office_id"
+    t.index ["provider_id", "day_of_week"], name: "index_work_schedules_on_provider_id_and_day_of_week"
+    t.index ["provider_id", "office_id", "day_of_week", "is_active"], name: "index_work_schedules_unique_active_per_provider_office_day", unique: true, where: "(is_active = true)"
+    t.index ["provider_id", "office_id"], name: "index_work_schedules_on_provider_id_and_office_id"
+    t.index ["provider_id"], name: "index_work_schedules_on_provider_id"
+    t.index ["work_periods"], name: "index_work_schedules_on_work_periods", using: :gin
   end
 
   add_foreign_key "appointments", "offices"
+  add_foreign_key "appointments", "users", column: "customer_id"
+  add_foreign_key "appointments", "users", column: "provider_id"
   add_foreign_key "availability_calendars", "offices"
+  add_foreign_key "office_memberships", "offices"
+  add_foreign_key "office_memberships", "users"
   add_foreign_key "work_schedules", "offices"
+  add_foreign_key "work_schedules", "users", column: "provider_id"
 end

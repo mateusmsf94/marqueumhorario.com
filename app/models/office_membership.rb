@@ -1,0 +1,46 @@
+class OfficeMembership < ApplicationRecord
+  # Associations
+  belongs_to :user
+  belongs_to :office
+
+  # Validations
+  validates :user_id, presence: true
+  validates :office_id, presence: true
+  validates :role, presence: true, length: { maximum: 50 }
+  validates :user_id, uniqueness: { scope: :office_id,
+    message: "is already a member of this office" }
+  validate :user_must_be_provider
+
+  # Enums
+  enum :role, {
+    member: "member",
+    admin: "admin",
+    owner: "owner"
+  }, default: :member, validate: true
+
+  # Scopes
+  scope :active, -> { where(is_active: true) }
+  scope :inactive, -> { where(is_active: false) }
+  scope :for_user, ->(user) { where(user_id: user.id) }
+  scope :for_office, ->(office) { where(office_id: office.id) }
+  scope :by_role, ->(role) { where(role: role) }
+
+  # Instance methods
+  def activate!
+    update!(is_active: true)
+  end
+
+  def deactivate!
+    update!(is_active: false)
+  end
+
+  private
+
+  def user_must_be_provider
+    return if user.nil?
+
+    unless user.provider?
+      errors.add(:user, "must be a provider to manage offices")
+    end
+  end
+end

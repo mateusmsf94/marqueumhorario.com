@@ -53,7 +53,7 @@ class TemporalScopesTest < ActiveSupport::TestCase
 
   test "should provide today scope for Appointment" do
     past_apt = create_appointment_at(title: "Yesterday", scheduled_at: 1.day.ago, status: :pending, office: @office)
-    today_apt = Appointment.create!(title: "Today", scheduled_at: Time.current + 1.hour, status: :pending, office: @office)
+    today_apt = create_appointment_at(title: "Today", scheduled_at: Time.current.beginning_of_day + 10.hours, status: :pending, office: @office)
     future_apt = Appointment.create!(title: "Tomorrow", scheduled_at: 1.day.from_now, status: :pending, office: @office)
 
     today_appointments = Appointment.today

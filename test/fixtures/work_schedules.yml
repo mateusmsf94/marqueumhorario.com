@@ -1,5 +1,6 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+# Dr. John's schedule at main office
 # Sunday (0)
 sunday_schedule:
   day_of_week: 0
@@ -9,8 +10,10 @@ sunday_schedule:
   buffer_minutes_between_appointments: 10
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "10:00", "end": "14:00" }]
 
-# Monday (1)
+# Monday (1) - With lunch break
 monday_schedule:
   day_of_week: 1
   opening_time: "09:00:00"
@@ -19,8 +22,10 @@ monday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "09:00", "end": "12:00" }, { "start": "13:00", "end": "17:00" }]
 
-# Tuesday (2)
+# Tuesday (2) - With lunch break
 tuesday_schedule:
   day_of_week: 2
   opening_time: "09:00:00"
@@ -29,6 +34,8 @@ tuesday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "09:00", "end": "12:00" }, { "start": "13:00", "end": "17:00" }]
 
 # Wednesday (3)
 wednesday_schedule:
@@ -39,6 +46,8 @@ wednesday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "09:00", "end": "12:00" }, { "start": "13:00", "end": "17:00" }]
 
 # Thursday (4)
 thursday_schedule:
@@ -49,6 +58,8 @@ thursday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "09:00", "end": "12:00" }, { "start": "13:00", "end": "17:00" }]
 
 # Friday (5)
 friday_schedule:
@@ -59,6 +70,8 @@ friday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "09:00", "end": "12:00" }, { "start": "13:00", "end": "17:00" }]
 
 # Saturday (6) - Half day
 saturday_schedule:
@@ -69,6 +82,8 @@ saturday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "09:00", "end": "13:00" }]
 
 # Inactive schedule for testing
 inactive_monday_schedule:
@@ -79,8 +94,33 @@ inactive_monday_schedule:
   buffer_minutes_between_appointments: 10
   is_active: false
   office: main_office
+  provider: provider_john
+  work_periods: [{ "start": "08:00", "end": "16:00" }]
 
-# West Coast Office schedules
+# Dr. Jane's schedule at main office (different days)
+jane_tuesday_schedule:
+  day_of_week: 2
+  opening_time: "13:00:00"
+  closing_time: "19:00:00"
+  appointment_duration_minutes: 30
+  buffer_minutes_between_appointments: 5
+  is_active: true
+  office: main_office
+  provider: provider_jane
+  work_periods: [{ "start": "13:00", "end": "16:00" }, { "start": "16:30", "end": "19:00" }]
+
+jane_thursday_schedule:
+  day_of_week: 4
+  opening_time: "13:00:00"
+  closing_time: "19:00:00"
+  appointment_duration_minutes: 30
+  buffer_minutes_between_appointments: 5
+  is_active: true
+  office: main_office
+  provider: provider_jane
+  work_periods: [{ "start": "13:00", "end": "16:00" }, { "start": "16:30", "end": "19:00" }]
+
+# West Coast Office schedules (Dr. John works here too)
 west_coast_monday_schedule:
   day_of_week: 1
   opening_time: "08:00:00"
@@ -89,3 +129,5 @@ west_coast_monday_schedule:
   buffer_minutes_between_appointments: 15
   is_active: true
   office: west_coast_office
+  provider: provider_john
+  work_periods: [{ "start": "08:00", "end": "12:00" }, { "start": "12:30", "end": "16:00" }]

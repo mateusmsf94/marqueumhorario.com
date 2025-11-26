@@ -7,6 +7,8 @@ pending_appointment:
   description: Annual checkup
   status: pending
   office: main_office
+  customer: customer_alice
+  provider: provider_john
 
 confirmed_appointment:
   title: Dentist Appointment
@@ -14,18 +16,24 @@ confirmed_appointment:
   description: Teeth cleaning
   status: confirmed
   office: main_office
+  customer: customer_bob
+  provider: provider_john
 
 cancelled_appointment:
   title: Cancelled Meeting
   scheduled_at: <%= 3.days.from_now %>
   status: cancelled
   office: main_office
+  customer: customer_alice
+  provider: provider_jane
 
 completed_appointment:
   title: Past Completed
   scheduled_at: <%= 1.day.ago %>
   status: completed
   office: main_office
+  customer: customer_bob
+  provider: provider_john
 
 # Today's appointment
 today_appointment:
@@ -34,6 +42,8 @@ today_appointment:
   description: Important meeting today
   status: pending
   office: main_office
+  customer: customer_alice
+  provider: provider_jane
 
 # Past appointment (for scope testing)
 past_appointment:
@@ -41,9 +51,13 @@ past_appointment:
   scheduled_at: <%= 1.day.ago %>
   status: pending
   office: main_office
+  customer: customer_bob
+  provider: provider_john
 
 next_monday_appointment:
   title: Next Monday Meeting
   scheduled_at: <%= Date.today.next_occurring(:monday).to_datetime.change(hour: 10, min: 0, sec: 0) %>
   status: "pending"
   office: main_office
+  customer: customer_alice
+  provider: provider_john
