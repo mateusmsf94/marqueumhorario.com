@@ -1,6 +1,6 @@
-# Rails Console Testing Guide - User Model
+# Rails Console Testing Guide - Appointment Booking Flow
 
-This guide provides step-by-step Rails console commands to manually test and explore the User model implementation, including all relationships with Offices and Appointments.
+This guide demonstrates the core appointment booking flow: provider setup → time slot generation → customer booking.
 
 ## Prerequisites
 
@@ -14,785 +14,38 @@ This guide provides step-by-step Rails console commands to manually test and exp
    rails console
    ```
 
-3. **(Optional)** Load test data:
-   ```bash
-   rails db:fixtures:load
-   ```
-
 ---
 
-## 1. User Model Basics
+## Main Flow: Complete Booking Journey
 
-### 1.1 Create a Customer
-
-```ruby
-customer = User.create!(
-  first_name: "Maria",
-  last_name: "Silva",
-  email: "maria@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["customer"],
-  cpf: "12345678902",
-  phone: "11987654321"
-)
-```
-
-**Expected:** User created successfully
-
-**Verify:**
-```ruby
-customer.customer?          # => true
-customer.provider?          # => false
-customer.full_name          # => "Maria Silva"
-customer.roles              # => ["customer"]
-customer.email              # => "maria@example.com"
-```
-
-### 1.2 Create a Provider
+### Step 1: Provider Signs Up
 
 ```ruby
-provider = User.create!(
-  first_name: "João",
-  last_name: "Santos",
-  email: "joao@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider"],
-  cpf: "98765432101"
-)
-```
-
-**Verify:**
-```ruby
-provider.provider?          # => true
-provider.customer?          # => false
-provider.roles              # => ["provider"]
-```
-
-### 1.3 Create a Multi-Role User (Provider AND Customer)
-
-```ruby
-# A provider who can also book appointments at other offices
-multi_role = User.create!(
-  first_name: "Carlos",
-  last_name: "Oliveira",
-  email: "carlos@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider", "customer"],
-  cpf: "11122233399"
-)
-```
-
-**Verify:**
-```ruby
-multi_role.provider?        # => true
-multi_role.customer?        # => true
-multi_role.roles            # => ["provider", "customer"]
-multi_role.has_role?(:provider)  # => true
-multi_role.has_role?(:customer)  # => true
-```
-
-### 1.4 Test Role Default
-
-```ruby
-# When roles are not specified, defaults to ["customer"]
-default_user = User.create!(
-  first_name: "Ana",
-  last_name: "Costa",
-  email: "ana@example.com",
-  password: "password123",
-  password_confirmation: "password123"
-)
-
-default_user.customer?      # => true
-default_user.roles          # => ["customer"]
-```
-
-### 1.5 Add and Remove Roles Dynamically
-
-```ruby
-# Start with a customer
-user = User.create!(
-  first_name: "Beatriz",
-  last_name: "Lima",
-  email: "beatriz@example.com",
-  password: "password123",
-  password_confirmation: "password123"
-  # roles defaults to ["customer"]
-)
-
-user.customer?              # => true
-user.provider?              # => false
-
-# User decides to also offer services - add provider role
-user.add_role(:provider)
-
-user.reload
-user.customer?              # => true
-user.provider?              # => true
-user.roles                  # => ["customer", "provider"]
-
-# Later, user stops providing services - remove provider role
-user.remove_role(:provider)
-
-user.reload
-user.customer?              # => true
-user.provider?              # => false
-user.roles                  # => ["customer"]
-```
-
----
-
-## 2. User Model Validations
-
-### 2.1 Required Fields
-
-**Test missing first_name:**
-```ruby
-user = User.new(
-  last_name: "Silva",
-  email: "test@example.com",
-  password: "password123",
-  password_confirmation: "password123"
-)
-
-user.valid?                 # => false
-user.errors[:first_name]    # => ["can't be blank"]
-```
-
-**Test missing last_name:**
-```ruby
-user = User.new(
-  first_name: "Test",
-  email: "test@example.com",
-  password: "password123",
-  password_confirmation: "password123"
-)
-
-user.valid?                 # => false
-user.errors[:last_name]     # => ["can't be blank"]
-```
-
-### 2.2 Email Validation
-
-**Test duplicate email:**
-```ruby
-# First user
-user1 = User.create!(
-  first_name: "User",
-  last_name: "One",
-  email: "duplicate@example.com",
-  password: "password123",
-  password_confirmation: "password123"
-)
-
-# Try to create second user with same email
-user2 = User.new(
-  first_name: "User",
-  last_name: "Two",
-  email: "duplicate@example.com",  # Same email!
-  password: "password123",
-  password_confirmation: "password123"
-)
-
-user2.valid?                # => false
-user2.errors[:email]        # => ["has already been taken"]
-```
-
-### 2.3 CPF Validation
-
-**Test valid CPF:**
-```ruby
-user = User.new(
-  first_name: "Test",
-  last_name: "User",
-  email: "cpftest@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  cpf: "12345678903"
-)
-
-user.valid?                 # => true
-```
-
-**Test CPF normalization (removes non-digits):**
-```ruby
-user = User.create!(
-  first_name: "Test",
-  last_name: "User",
-  email: "formatted@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  cpf: "123.456.789-04"      # Formatted CPF
-)
-
-user.cpf                    # => "12345678904" (normalized to digits only)
-```
-
-**Test invalid CPF (too short):**
-```ruby
-user = User.new(
-  first_name: "Test",
-  last_name: "User",
-  email: "short@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  cpf: "123456"              # Only 6 digits
-)
-
-user.valid?                 # => false
-user.errors[:cpf]           # => ["is the wrong length (should be 11 characters)"]
-```
-
-**Test invalid CPF (all same digits):**
-```ruby
-user = User.new(
-  first_name: "Test",
-  last_name: "User",
-  email: "same@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  cpf: "11111111111"         # All same digit
-)
-
-user.valid?                 # => false
-user.errors[:cpf]           # => ["is invalid"]
-```
-
-**Test CPF uniqueness:**
-```ruby
-# First user with CPF
-user1 = User.create!(
-  first_name: "First",
-  last_name: "User",
-  email: "first@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  cpf: "11122233344"
-)
-
-# Try to create second user with same CPF
-user2 = User.new(
-  first_name: "Second",
-  last_name: "User",
-  email: "second@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  cpf: "11122233344"         # Same CPF!
-)
-
-user2.valid?                # => false
-user2.errors[:cpf]          # => ["has already been taken"]
-```
-
-**Test CPF is optional:**
-```ruby
-user = User.create!(
-  first_name: "No",
-  last_name: "CPF",
-  email: "nocpf@example.com",
-  password: "password123",
-  password_confirmation: "password123"
-  # cpf not provided
-)
-
-user.cpf                    # => nil
-user.valid?                 # => true
-```
-
----
-
-## 3. User Scopes
-
-### 3.1 Providers Scope
-
-```ruby
-# Get all providers
-providers = User.providers
-
-providers.count             # Number of providers
-providers.first.provider?   # => true
-```
-
-### 3.2 Customers Scope
-
-```ruby
-# Get all customers
-customers = User.customers
-
-customers.count             # Number of customers
-customers.first.customer?   # => true
-```
-
-### 3.3 With CPF Scope
-
-```ruby
-# Get all users with CPF
-users_with_cpf = User.with_cpf
-
-users_with_cpf.each do |user|
-  puts "#{user.full_name}: #{user.cpf}"
-end
-```
-
----
-
-## 4. Customer → Appointments Relationship
-
-### 4.1 Create an Appointment for a Customer
-
-First, ensure you have an office and a customer:
-
-```ruby
-# Create office
-office = Office.create!(
-  name: "Clínica Central",
-  time_zone: "America/Sao_Paulo",
-  address: "Rua das Flores, 123",
-  city: "São Paulo",
-  state: "SP"
-)
-
-# Create customer
-customer = User.create!(
-  first_name: "Carlos",
-  last_name: "Mendes",
-  email: "carlos@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["customer"],
-  cpf: "11122233345"
-)
-
-# Create appointment for customer
-appointment = Appointment.create!(
-  office: office,
-  customer: customer,
-  title: "Consulta Geral",
-  scheduled_at: 2.days.from_now,
-  status: :pending
-)
-```
-
-**Verify the relationship:**
-```ruby
-# From appointment to customer
-appointment.customer            # => Customer object
-appointment.customer.full_name  # => "Carlos Mendes"
-
-# From customer to appointments
-customer.appointments           # => [appointment]
-customer.appointments.count     # => 1
-```
-
-### 4.2 Query Customer's Appointments
-
-```ruby
-# Get all appointments for a customer
-customer_appointments = customer.appointments
-
-# Get appointments by status
-pending = customer.appointments.pending
-confirmed = customer.appointments.confirmed
-
-# Use the for_customer scope
-Appointment.for_customer(customer.id)
-```
-
-### 4.3 Test Validation: Provider Cannot Be Appointment Customer
-
-```ruby
-# Create a provider
-provider = User.create!(
-  first_name: "Dr. Pedro",
-  last_name: "Silva",
-  email: "pedro@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider"]
-)
-
-# Try to create appointment with provider as customer
-appointment = Appointment.new(
-  office: office,
-  customer: provider,        # Provider as customer - should fail!
-  title: "Test",
-  scheduled_at: 2.days.from_now
-)
-
-appointment.valid?             # => false
-appointment.errors[:customer]  # => ["must have customer user type"]
-```
-
----
-
-## 5. Provider → Appointments Relationship
-
-### 5.1 Create an Appointment with Provider
-
-Appointments can have a provider assigned to deliver the service:
-
-```ruby
-# Create provider
+# Provider creates their account
 provider = User.create!(
   first_name: "Dr. João",
   last_name: "Silva",
   email: "joao.silva@example.com",
   password: "password123",
   password_confirmation: "password123",
-  roles: ["provider"]
-)
-
-# Create office
-office = Office.create!(
-  name: "Clínica Exemplo",
-  time_zone: "America/Sao_Paulo",
-  city: "São Paulo",
-  state: "SP"
-)
-
-# Add provider to office
-OfficeMembership.create!(
-  user: provider,
-  office: office,
-  role: :owner
-)
-
-# Create customer
-customer = User.create!(
-  first_name: "Maria",
-  last_name: "Santos",
-  email: "maria.santos@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["customer"]
-)
-
-# Create appointment with provider
-appointment = Appointment.create!(
-  office: office,
-  customer: customer,
-  provider: provider,         # Provider assigned
-  title: "Consulta Médica",
-  scheduled_at: 2.days.from_now,
-  status: :pending
-)
-```
-
-**Verify the relationship:**
-```ruby
-# From appointment to provider
-appointment.provider            # => Provider object
-appointment.provider.full_name  # => "Dr. João Silva"
-
-# From provider to appointments
-provider.provider_appointments           # => [appointment]
-provider.provider_appointments.count     # => 1
-```
-
-### 5.2 Query Provider's Appointments
-
-```ruby
-# Get all appointments for a provider
-provider_appointments = provider.provider_appointments
-
-# Get appointments by status
-pending = provider.provider_appointments.pending
-confirmed = provider.provider_appointments.confirmed
-
-# Use the for_provider scope
-Appointment.for_provider(provider.id)
-
-# Chain with other scopes
-upcoming_confirmed = provider.provider_appointments.upcoming.confirmed
-```
-
-### 5.3 Test Validation: Provider Must Have Provider User Type
-
-```ruby
-# Create a customer
-customer_user = User.create!(
-  first_name: "Carlos",
-  last_name: "Mendes",
-  email: "carlos@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["customer"]
-)
-
-# Try to assign customer as provider
-appointment = Appointment.new(
-  office: office,
-  customer: customer,
-  provider: customer_user,   # Customer as provider - should fail!
-  title: "Test",
-  scheduled_at: 2.days.from_now
-)
-
-appointment.valid?              # => false
-appointment.errors[:provider]   # => ["must have provider user type"]
-```
-
-### 5.4 Test Validation: Provider Must Work at the Office
-
-```ruby
-# Create another office
-other_office = Office.create!(
-  name: "Outra Clínica",
-  time_zone: "America/Sao_Paulo",
-  city: "Rio de Janeiro",
-  state: "RJ"
-)
-
-# Create provider who doesn't work at original office
-other_provider = User.create!(
-  first_name: "Dr. Pedro",
-  last_name: "Costa",
-  email: "pedro@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider"]
-)
-
-# Add provider only to other_office
-OfficeMembership.create!(
-  user: other_provider,
-  office: other_office,
-  role: :member
-)
-
-# Try to assign provider to appointment at different office
-appointment = Appointment.new(
-  office: office,              # Original office
-  customer: customer,
-  provider: other_provider,    # Provider works at other_office - should fail!
-  title: "Test",
-  scheduled_at: 2.days.from_now
-)
-
-appointment.valid?              # => false
-appointment.errors[:provider]   # => ["must work at this office"]
-```
-
-### 5.5 Appointments Can Have Provider Without Customer
-
-```ruby
-# Create appointment with provider but no customer (e.g., blocked time)
-blocked_time = Appointment.create!(
-  office: office,
-  provider: provider,
-  title: "Blocked Time - Lunch",
-  scheduled_at: 3.days.from_now.change(hour: 12, min: 0),
-  status: :pending
-  # No customer assigned
-)
-
-blocked_time.customer    # => nil
-blocked_time.provider    # => provider
-```
-
-### 5.6 Find All Appointments a Provider Delivers
-
-```ruby
-# Get provider's upcoming appointments
-provider = User.find_by(email: "joao.silva@example.com")
-
-puts "\n#{provider.full_name}'s Upcoming Appointments:"
-provider.provider_appointments.upcoming.each do |apt|
-  puts "\n- #{apt.title}"
-  puts "  Office: #{apt.office.name}"
-  puts "  Customer: #{apt.customer&.full_name || 'No customer (blocked time)'}"
-  puts "  When: #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-  puts "  Status: #{apt.status}"
-end
-
-# Count by status
-puts "\nAppointment Summary:"
-puts "Pending: #{provider.provider_appointments.pending.count}"
-puts "Confirmed: #{provider.provider_appointments.confirmed.count}"
-puts "Completed: #{provider.provider_appointments.completed.count}"
-puts "Total: #{provider.provider_appointments.count}"
-```
-
----
-
-## 6. Provider → Offices Relationship (via OfficeMemberships)
-
-### 6.1 Create Office Membership
-
-```ruby
-# Create a provider
-provider = User.create!(
-  first_name: "Dr. Ana",
-  last_name: "Lima",
-  email: "ana.lima@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider"]
-)
-
-# Create an office
-office = Office.create!(
-  name: "Consultório Dr. Ana",
-  time_zone: "America/Sao_Paulo",
-  city: "Rio de Janeiro",
-  state: "RJ"
-)
-
-# Create membership (provider manages office)
-membership = OfficeMembership.create!(
-  user: provider,
-  office: office,
-  role: :owner
-)
-```
-
-**Verify the relationship:**
-```ruby
-# From provider to offices
-provider.offices                # => [office]
-provider.manages_office?(office) # => true
-
-# From office to providers
-office.users                    # => [provider]
-office.managed_by?(provider)    # => true
-```
-
-### 6.2 Test Different Membership Roles
-
-```ruby
-# Create another provider
-admin_user = User.create!(
-  first_name: "Dr. Bruno",
-  last_name: "Costa",
-  email: "bruno@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider"]
-)
-
-# Add as admin
-admin_membership = OfficeMembership.create!(
-  user: admin_user,
-  office: office,
-  role: :admin
-)
-
-# Create member provider
-member_user = User.create!(
-  first_name: "Dr. Clara",
-  last_name: "Souza",
-  email: "clara@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider"]
-)
-
-# Add as member
-member_membership = OfficeMembership.create!(
-  user: member_user,
-  office: office,
-  role: :member
-)
-```
-
-**Query by role:**
-```ruby
-# All memberships for the office
-office.office_memberships
-
-# Get only owners
-office.office_memberships.owner
-
-# Get only admins
-office.office_memberships.admin
-
-# Get only members
-office.office_memberships.member
-```
-
-### 6.3 Test Validation: Customer Cannot Be Office Member
-
-```ruby
-# Create a customer
-customer = User.create!(
-  first_name: "Maria",
-  last_name: "Santos",
-  email: "maria.santos@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["customer"]
-)
-
-# Try to create membership with customer
-membership = OfficeMembership.new(
-  user: customer,           # Customer - should fail!
-  office: office,
-  role: :member
-)
-
-membership.valid?            # => false
-membership.errors[:user]     # => ["must be a provider to manage offices"]
-```
-
-### 6.4 Active/Inactive Memberships
-
-```ruby
-# Deactivate a membership
-membership = office.office_memberships.first
-membership.deactivate!
-
-membership.is_active        # => false
-
-# Query only active memberships
-office.office_memberships.active
-
-# Get active managers
-office.active_managers
-
-# Reactivate
-membership.activate!
-membership.is_active        # => true
-```
-
-### 6.5 Test Unique Membership Constraint
-
-```ruby
-# Try to add same provider to same office twice
-duplicate_membership = OfficeMembership.new(
-  user: provider,
-  office: office,
-  role: :admin
-)
-
-duplicate_membership.valid?          # => false
-duplicate_membership.errors[:user_id] # => ["is already a member of this office"]
-```
-
----
-
-## 7. Complete User Journey Simulation
-
-### 7.1 Provider Onboarding Journey
-
-```ruby
-# 1. Provider signs up
-provider = User.create!(
-  first_name: "Dr. Roberto",
-  last_name: "Oliveira",
-  email: "roberto@example.com",
-  password: "password123",
-  password_confirmation: "password123",
   roles: ["provider"],
-  cpf: "11122233346",
-  phone: "11998887777"
+  cpf: "12345678901",
+  phone: "11987654321"
 )
 
-# 2. Provider creates their office
+# Verify
+provider.provider?  # => true
+puts "Provider created: #{provider.full_name}"
+```
+
+---
+
+### Step 2: Provider Creates Office
+
+```ruby
+# Provider sets up their office/clinic
 office = Office.create!(
-  name: "Clínica Dr. Roberto",
+  name: "Clínica Dr. Silva",
   time_zone: "America/Sao_Paulo",
   address: "Av. Paulista, 1000",
   city: "São Paulo",
@@ -800,406 +53,293 @@ office = Office.create!(
   zip_code: "01310-100"
 )
 
-# 3. Provider becomes office owner
+# Link provider to office as owner
 OfficeMembership.create!(
   user: provider,
   office: office,
   role: :owner
 )
 
-# 4. Provider sets up work schedule
+# Verify
+puts "Office created: #{office.name}"
+puts "Provider manages #{provider.offices.count} office(s)"
+```
+
+---
+
+### Step 3: Provider Sets Work Schedule
+
+```ruby
+# Define when provider is available (Monday, 9 AM - 6 PM)
+# Lunch break: 12 PM - 1 PM
 work_schedule = WorkSchedule.create!(
+  provider: provider,
   office: office,
-  day_of_week: 1,  # Monday
-  start_time: "09:00",
-  end_time: "18:00",
-  appointment_duration: 60,
+  day_of_week: 1,  # Monday (0=Sunday, 1=Monday, etc.)
+  opening_time: "09:00",
+  closing_time: "18:00",
+  work_periods: [
+    { "start" => "09:00", "end" => "12:00" },  # Morning shift
+    { "start" => "13:00", "end" => "18:00" }   # Afternoon shift
+  ],
+  appointment_duration_minutes: 60,  # 1-hour appointments
+  buffer_minutes_between_appointments: 15,  # 15-min buffer between appointments
   is_active: true
 )
 
-# Verify provider's setup
-puts "Provider: #{provider.full_name}"
-puts "Manages #{provider.offices.count} office(s)"
-puts "Office: #{office.name}"
-puts "Active: #{office.is_active}"
+# Verify
+puts "Work schedule created for #{Date::DAYNAMES[work_schedule.day_of_week]}"
+puts "Hours: #{work_schedule.opening_time} - #{work_schedule.closing_time}"
+puts "Appointment duration: #{work_schedule.appointment_duration_minutes} minutes"
+puts "Work periods: #{work_schedule.work_periods}"
 ```
 
-### 7.2 Customer Booking Journey
+---
+
+### Step 4: Generate Available Time Slots
 
 ```ruby
-# 1. Customer signs up
+# Choose a date to generate slots (next Monday)
+target_date = Date.today.next_occurring(:monday)
+
+# Generate time slots using SlotGenerator
+slots = SlotGenerator.new(
+  office: office,
+  provider: provider,
+  start_date: target_date,
+  end_date: target_date
+).generate
+
+# Display available slots
+puts "\n=== Available Time Slots for #{target_date.strftime('%A, %B %d, %Y')} ==="
+slots.each do |slot|
+  if slot.status == "available"
+    puts "✓ #{slot.start_time.strftime('%H:%M')} - #{slot.end_time.strftime('%H:%M')}"
+  end
+end
+
+# Count slots
+available_count = slots.count { |s| s.status == "available" }
+puts "\nTotal available slots: #{available_count}"
+```
+
+**Expected output:**
+```
+Available slots from 9:00-12:00 (morning) and 13:00-18:00 (afternoon)
+Each slot is 1 hour + 15 min buffer = 1 hour 15 minutes apart
+Example: 09:00-10:00, 10:15-11:15, 13:00-14:00, 14:15-15:15, 15:30-16:30
+```
+
+---
+
+### Step 5: Customer Signs Up
+
+```ruby
+# Customer creates their account
 customer = User.create!(
-  first_name: "Fernanda",
-  last_name: "Rodrigues",
-  email: "fernanda@example.com",
+  first_name: "Maria",
+  last_name: "Santos",
+  email: "maria.santos@example.com",
   password: "password123",
   password_confirmation: "password123",
   roles: ["customer"],
-  phone: "11977776666"
+  phone: "11977654321"
 )
 
-# 2. Customer browses active offices
-available_offices = Office.active
+# Verify
+customer.customer?  # => true
+puts "Customer created: #{customer.full_name}"
+```
 
-puts "Available offices:"
-available_offices.each do |off|
-  puts "- #{off.name} (#{off.city}, #{off.state})"
-end
+---
 
-# 3. Customer books an appointment with specific provider
+### Step 6: Customer Picks a Time Slot
+
+```ruby
+# Customer chooses first available slot
+first_slot = slots.find { |s| s.status == "available" }
+
+# Customer books the appointment
 appointment = Appointment.create!(
   office: office,
   customer: customer,
-  provider: provider,       # Assign the provider who will deliver the service
-  title: "Consulta de Rotina",
-  scheduled_at: 3.days.from_now.change(hour: 10, min: 0),
+  provider: provider,
+  title: "Consulta Médica",
+  scheduled_at: first_slot.start_time,
   status: :pending
 )
 
-# 4. Appointment is confirmed
+puts "\n=== Appointment Booked ==="
+puts "Customer: #{appointment.customer.full_name}"
+puts "Provider: #{appointment.provider.full_name}"
+puts "Office: #{appointment.office.name}"
+puts "Date/Time: #{appointment.scheduled_at.strftime('%A, %B %d, %Y at %H:%M')}"
+puts "Status: #{appointment.status}"
+```
+
+---
+
+### Step 7: Provider Confirms Appointment
+
+```ruby
+# Provider reviews and confirms the booking
 appointment.update!(status: :confirmed)
 
-# Verify customer's appointments
-puts "\nCustomer: #{customer.full_name}"
-puts "Appointments: #{customer.appointments.count}"
-customer.appointments.each do |apt|
-  puts "- #{apt.title} at #{apt.office.name} on #{apt.scheduled_at}"
-  puts "  Status: #{apt.status}"
-end
-```
-
-### 7.3 Provider Views Their Appointments
-
-```ruby
-# Method 1: Get appointments the provider personally delivers
-provider_appointments = provider.provider_appointments
-
-puts "\nAppointments #{provider.full_name} will deliver:"
-provider_appointments.upcoming.each do |apt|
-  puts "\n- #{apt.title}"
-  puts "  Office: #{apt.office.name}"
-  puts "  Customer: #{apt.customer&.full_name || 'No customer (blocked time)'}"
-  puts "  When: #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-  puts "  Status: #{apt.status}"
-end
-
-# Method 2: Get ALL appointments at offices the provider manages
-all_office_appointments = Appointment.where(office_id: provider.office_ids)
-
-puts "\n\nAll appointments at #{provider.full_name}'s offices:"
-all_office_appointments.upcoming.each do |apt|
-  puts "\n- #{apt.title}"
-  puts "  Provider: #{apt.provider&.full_name || 'No provider assigned'}"
-  puts "  Customer: #{apt.customer&.full_name || 'No customer'}"
-  puts "  Office: #{apt.office.name}"
-  puts "  When: #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-  puts "  Status: #{apt.status}"
-end
-```
-
-### 7.4 Multi-Role User: Provider Who Also Books Appointments
-
-```ruby
-# Create a multi-role user (provider AND customer)
-dr_maria = User.create!(
-  first_name: "Dr. Maria",
-  last_name: "Cardoso",
-  email: "maria.cardoso@example.com",
-  password: "password123",
-  password_confirmation: "password123",
-  roles: ["provider", "customer"],
-  cpf: "99988877766",
-  phone: "11955554444"
-)
-
-# Dr. Maria runs her own office
-marias_office = Office.create!(
-  name: "Clínica Dra. Maria",
-  time_zone: "America/Sao_Paulo",
-  address: "Av. Brasil, 500",
-  city: "São Paulo",
-  state: "SP"
-)
-
-# Add Dr. Maria as owner
-OfficeMembership.create!(
-  user: dr_maria,
-  office: marias_office,
-  role: :owner
-)
-
-# Dr. Maria provides services to a customer at her office
-customer = users(:customer_alice)
-
-appointment_as_provider = Appointment.create!(
-  office: marias_office,
-  provider: dr_maria,      # Dr. Maria is the PROVIDER
-  customer: customer,
-  title: "Consulta Cardiológica",
-  scheduled_at: 2.days.from_now.change(hour: 14, min: 0),
-  status: :confirmed
-)
-
-puts "Appointment where Dr. Maria is the provider:"
-puts "  Customer: #{appointment_as_provider.customer.full_name}"
-puts "  Provider: #{appointment_as_provider.provider.full_name}"
-
-# Dr. Maria also books an appointment at a dentist's office
-dentist_office = offices(:another_office)
-dentist = users(:provider_jane)
-
-appointment_as_customer = Appointment.create!(
-  office: dentist_office,
-  customer: dr_maria,      # Dr. Maria is the CUSTOMER
-  provider: dentist,
-  title: "Consulta Odontológica",
-  scheduled_at: 3.days.from_now.change(hour: 10, min: 0),
-  status: :pending
-)
-
-puts "\nAppointment where Dr. Maria is the customer:"
-puts "  Customer: #{appointment_as_customer.customer.full_name}"
-puts "  Provider: #{appointment_as_customer.provider.full_name}"
-
-# View Dr. Maria's two different appointment lists
-puts "\n\n=== Dr. Maria's Appointments as PROVIDER (appointments she delivers) ==="
-dr_maria.provider_appointments.each do |apt|
-  puts "- #{apt.title} for #{apt.customer.full_name} on #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-end
-
-puts "\n=== Dr. Maria's Appointments as CUSTOMER (appointments she booked) ==="
-dr_maria.appointments.each do |apt|
-  puts "- #{apt.title} with #{apt.provider.full_name} on #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-end
-
-# Verify roles
-puts "\n\nDr. Maria's roles:"
-puts "  Roles: #{dr_maria.roles}"
-puts "  Is provider? #{dr_maria.provider?}"
-puts "  Is customer? #{dr_maria.customer?}"
-puts "  Can manage offices? #{dr_maria.provider?}"
-puts "  Can book appointments? #{dr_maria.customer?}"
-```
-
-**This demonstrates:**
-- Same user can be both provider and customer
-- `provider_appointments` - appointments they deliver as a provider
-- `appointments` - appointments they booked as a customer
-- Multi-role users appear in both `User.providers` and `User.customers` scopes
-
----
-
-## 8. Advanced Queries
-
-### 8.1 Find All Appointments for a Provider's Offices
-
-```ruby
-# Method 1: Using office_ids
-provider = User.find_by(email: "roberto@example.com")
-appointments = Appointment.where(office_id: provider.office_ids)
-
-# Method 2: Using joins
-appointments = Appointment.joins(office: :office_memberships)
-                         .where(office_memberships: { user_id: provider.id })
-
-appointments.count
-```
-
-### 8.2 Find All Active Providers
-
-```ruby
-active_providers = User.providers.joins(:office_memberships)
-                      .where(office_memberships: { is_active: true })
-                      .distinct
-
-active_providers.each do |prov|
-  puts "#{prov.full_name} - #{prov.offices.count} office(s)"
-end
-```
-
-### 8.3 Find Offices in a Specific City with Their Managers
-
-```ruby
-city_offices = Office.by_city("São Paulo").includes(:providers)
-
-city_offices.each do |office|
-  puts "\n#{office.name}"
-  puts "Managers:"
-  office.providers.each do |provider|
-    puts "  - #{provider.full_name}"
-  end
-end
-```
-
-### 8.4 Count Appointments by Status for a Customer
-
-```ruby
-customer = User.find_by(email: "fernanda@example.com")
-
-puts "\nAppointment Summary for #{customer.full_name}:"
-puts "Pending: #{customer.appointments.pending.count}"
-puts "Confirmed: #{customer.appointments.confirmed.count}"
-puts "Cancelled: #{customer.appointments.cancelled.count}"
-puts "Completed: #{customer.appointments.completed.count}"
-puts "Total: #{customer.appointments.count}"
-```
-
-### 8.5 Find Customers Who Booked at a Specific Office
-
-```ruby
-office = Office.find_by(name: "Clínica Central")
-
-customers = User.joins(:appointments)
-               .where(appointments: { office_id: office.id })
-               .distinct
-
-puts "Customers who booked at #{office.name}:"
-customers.each do |customer|
-  appointment_count = customer.appointments.where(office: office).count
-  puts "- #{customer.full_name} (#{appointment_count} appointment(s))"
-end
-```
-
-### 8.6 Find Appointments by Provider Across Multiple Offices
-
-```ruby
-# Find a provider who works at multiple offices
-provider = User.providers.joins(:office_memberships).group('users.id').having('COUNT(office_memberships.id) > 1').first
-
-# Get all appointments this provider delivers across all offices
-appointments_by_office = provider.provider_appointments.includes(:office, :customer).group_by(&:office)
-
-puts "\n#{provider.full_name}'s appointments across offices:"
-appointments_by_office.each do |office, appointments|
-  puts "\n#{office.name} (#{appointments.count} appointments):"
-  appointments.each do |apt|
-    puts "  - #{apt.title} | #{apt.customer&.full_name || 'No customer'} | #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-  end
-end
-```
-
-### 8.7 Find Appointments with Both Customer and Provider
-
-```ruby
-# Find all appointments that have both a customer and a provider assigned
-complete_appointments = Appointment.where.not(customer_id: nil).where.not(provider_id: nil)
-
-puts "Complete appointments (with customer and provider):"
-complete_appointments.includes(:customer, :provider, :office).each do |apt|
-  puts "\n#{apt.title} at #{apt.office.name}"
-  puts "  Customer: #{apt.customer.full_name}"
-  puts "  Provider: #{apt.provider.full_name}"
-  puts "  When: #{apt.scheduled_at.strftime('%d/%m/%Y %H:%M')}"
-  puts "  Status: #{apt.status}"
-end
-
-# Count appointments by assignment type
-puts "\n\nAppointment assignment statistics:"
-puts "With both customer and provider: #{Appointment.where.not(customer_id: nil).where.not(provider_id: nil).count}"
-puts "With customer only: #{Appointment.where.not(customer_id: nil).where(provider_id: nil).count}"
-puts "With provider only: #{Appointment.where(customer_id: nil).where.not(provider_id: nil).count}"
-puts "With neither (placeholder): #{Appointment.where(customer_id: nil, provider_id: nil).count}"
+puts "✓ Appointment confirmed!"
 ```
 
 ---
 
-## 9. Cleanup Commands
+## Verify the Complete Flow
 
-### Reset Data (Be Careful!)
+### Check Provider's Appointments
 
 ```ruby
-# Delete all users (will cascade to memberships and affect appointments)
+puts "\n=== Provider's Schedule ==="
+provider.provider_appointments.upcoming.each do |apt|
+  puts "#{apt.scheduled_at.strftime('%m/%d %H:%M')} - #{apt.customer.full_name} - #{apt.status}"
+end
+```
+
+### Check Customer's Appointments
+
+```ruby
+puts "\n=== Customer's Bookings ==="
+customer.appointments.upcoming.each do |apt|
+  puts "#{apt.scheduled_at.strftime('%m/%d %H:%M')} - #{apt.provider.full_name} at #{apt.office.name}"
+end
+```
+
+### Regenerate Slots (Now Shows Booked Slot as Busy)
+
+```ruby
+# Generate slots again for the same date
+updated_slots = SlotGenerator.new(
+  office: office,
+  provider: provider,
+  start_date: target_date,
+  end_date: target_date
+).generate
+
+# Show availability after booking
+puts "\n=== Updated Availability ==="
+updated_slots.each do |slot|
+  status_icon = slot.status == "available" ? "✓" : "✗"
+  puts "#{status_icon} #{slot.start_time.strftime('%H:%M')} - #{slot.status}"
+end
+```
+
+---
+
+## Advanced: Multi-Day Schedule Setup
+
+```ruby
+# Set up work schedule for entire week
+days_config = [
+  { day: 1, name: "Monday" },    # Monday
+  { day: 2, name: "Tuesday" },   # Tuesday
+  { day: 3, name: "Wednesday" }, # Wednesday
+  { day: 4, name: "Thursday" },  # Thursday
+  { day: 5, name: "Friday" }     # Friday
+]
+
+days_config.each do |config|
+  WorkSchedule.create!(
+    provider: provider,
+    office: office,
+    day_of_week: config[:day],
+    opening_time: "09:00",
+    closing_time: "18:00",
+    work_periods: [
+      { "start" => "09:00", "end" => "12:00" },
+      { "start" => "13:00", "end" => "18:00" }
+    ],
+    appointment_duration_minutes: 60,
+    buffer_minutes_between_appointments: 15,
+    is_active: true
+  )
+  puts "✓ #{config[:name]} schedule created"
+end
+```
+
+### Generate Slots for Entire Week
+
+```ruby
+# Generate slots for next 7 days
+start_date = Date.today
+end_date = start_date + 7.days
+
+weekly_slots = SlotGenerator.new(
+  office: office,
+  provider: provider,
+  start_date: start_date,
+  end_date: end_date
+).generate
+
+# Group by date
+slots_by_date = weekly_slots.group_by { |slot| slot.start_time.to_date }
+
+slots_by_date.each do |date, day_slots|
+  available = day_slots.count { |s| s.status == "available" }
+  puts "#{date.strftime('%A, %b %d')}: #{available} available slots"
+end
+```
+
+---
+
+## Cleanup
+
+```ruby
+# Remove test data
+Appointment.destroy_all
+WorkSchedule.destroy_all
+OfficeMembership.destroy_all
+Office.destroy_all
 User.destroy_all
 
-# Delete all office memberships
-OfficeMembership.destroy_all
-
-# Delete all appointments
-Appointment.destroy_all
-
-# Delete all offices
-Office.destroy_all
-```
-
-### Reload Fixtures
-
-```bash
-# Exit console first, then:
-rails db:fixtures:load
+puts "✓ Test data cleaned up"
 ```
 
 ---
 
-## Tips & Tricks
+## Quick Reference
 
-### Check Current Data
-
+### Key Commands
 ```ruby
-# Count records
-puts "Users: #{User.count}"
-puts "Providers: #{User.providers.count}"
-puts "Customers: #{User.customers.count}"
-puts "Offices: #{Office.count}"
-puts "Memberships: #{OfficeMembership.count}"
-puts "Appointments: #{Appointment.count}"
+# Create provider
+provider = User.create!(first_name: "...", roles: ["provider"], ...)
+
+# Create office
+office = Office.create!(name: "...", time_zone: "America/Sao_Paulo", ...)
+
+# Link provider to office
+OfficeMembership.create!(user: provider, office: office, role: :owner)
+
+# Create work schedule
+WorkSchedule.create!(provider: provider, office: office, day_of_week: 1, ...)
+
+# Generate slots
+SlotGenerator.new(office: office, provider: provider, start_date: date, end_date: date).generate
+
+# Create customer
+customer = User.create!(first_name: "...", roles: ["customer"], ...)
+
+# Book appointment
+Appointment.create!(office: office, customer: customer, provider: provider, scheduled_at: time, ...)
 ```
 
-### Find Records
-
+### Key Scopes
 ```ruby
-# Find by email
-user = User.find_by(email: "example@example.com")
-
-# Find by CPF
-user = User.find_by(cpf: "12345678902")
-
-# Find by name
-users = User.where("first_name ILIKE ?", "%maria%")
-```
-
-### Update Records
-
-```ruby
-user = User.find_by(email: "example@example.com")
-user.update!(phone: "11999998888")
-```
-
-### Inspect Relationships
-
-```ruby
-user = User.first
-user.offices                    # Offices user manages (if provider)
-user.appointments               # Appointments user booked (if customer)
-user.office_memberships         # Membership details
+User.providers              # All providers
+User.customers              # All customers
+provider.offices            # Offices managed by provider
+provider.provider_appointments  # Appointments provider delivers
+customer.appointments       # Appointments customer booked
+Appointment.upcoming        # Future appointments
+Appointment.confirmed       # Confirmed appointments
+Office.active               # Active offices
 ```
 
 ---
-
-## Common Errors and Solutions
-
-### "Validation failed: Email has already been taken"
-**Solution:** Use a different email address
-
-### "Validation failed: User must be a provider to manage offices"
-**Solution:** Ensure the user has `roles: ["provider"]`
-
-### "Validation failed: Customer must have customer user type"
-**Solution:** Only customers can be assigned to appointments as customers
-
-### "CPF is the wrong length"
-**Solution:** Ensure CPF has exactly 11 digits
-
-### "CPF is invalid"
-**Solution:** Don't use CPFs with all the same digits (e.g., "11111111111")
-
----
-
-## Next Steps
-
-1. Try creating your own test scenarios
-2. Explore complex queries using joins
-3. Test edge cases and error handling
-4. Experiment with scopes and associations
-5. Build realistic workflows for your application
 
 Happy testing! 🚀
