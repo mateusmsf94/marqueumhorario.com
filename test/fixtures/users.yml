@@ -5,7 +5,6 @@ provider_john:
   last_name: "Smith"
   email: "john@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  roles: ["provider"]
   phone: "5511999998888"
   cpf: "12345678901"
 
@@ -14,7 +13,6 @@ provider_jane:
   last_name: "Doe"
   email: "jane@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  roles: ["provider"]
   phone: "5511888887777"
   cpf: "98765432100"
 
@@ -23,7 +21,6 @@ customer_alice:
   last_name: "Johnson"
   email: "alice@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  roles: ["customer"]
   cpf: "98765432109"
 
 customer_bob:
@@ -31,7 +28,6 @@ customer_bob:
   last_name: "Williams"
   email: "bob@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  roles: ["customer"]
   phone: "5511777776666"
 
 # Multi-role user: can both provide services and book appointments
@@ -40,6 +36,5 @@ provider_customer_charlie:
   last_name: "Brown"
   email: "charlie@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
-  roles: ["provider", "customer"]
   phone: "5511666665555"
   cpf: "11122233344"

@@ -1,0 +1,14 @@
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Edit weekly schedule</h1>
+    <p class="mt-2 text-sm text-gray-600">
+      Update working hours for <strong><%= @office.name %></strong>
+    </p>
+    <p class="mt-1 text-xs text-gray-500">
+      Time zone: <%= @office.time_zone %>
+    </p>
+  </div>
+
+  <%= render "form", schedule_collection: @schedule_collection, office: @office %>
+</div>

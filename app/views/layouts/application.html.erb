@@ -23,8 +23,63 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="bg-gray-50">
+    <% if user_signed_in? %>
+      <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between h-16">
+            <div class="flex">
+              <%= link_to root_path, class: "flex-shrink-0 flex items-center" do %>
+                <h1 class="text-xl font-bold text-blue-600">Marque Um Horário</h1>
+              <% end %>
+
+              <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <%= link_to "My Appointments", customers_appointments_path,
+                    class: "border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+
+                <% if user_is_provider? %>
+                  <%= link_to "Provider Dashboard", providers_dashboard_path,
+                      class: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+                <% else %>
+                  <%= link_to "Become a Provider", new_providers_onboarding_path,
+                      class: "border-transparent text-blue-600 hover:border-blue-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+              <span class="text-sm text-gray-700">
+                <%= current_user.full_name %>
+              </span>
+
+              <%= link_to "Settings", edit_user_registration_path,
+                  class: "text-gray-500 hover:text-gray-700 text-sm font-medium" %>
+
+              <%= button_to "Sign Out", destroy_user_session_path, method: :delete,
+                  class: "text-gray-500 hover:text-gray-700 text-sm font-medium" %>
+            </div>
+          </div>
+        </div>
+      </nav>
+    <% end %>
+
+    <% if notice.present? %>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="bg-green-50 border-l-4 border-green-400 p-4">
+          <p class="text-sm text-green-700"><%= notice %></p>
+        </div>
+      </div>
+    <% end %>
+
+    <% if alert.present? %>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="bg-red-50 border-l-4 border-red-400 p-4">
+          <p class="text-sm text-red-700"><%= alert %></p>
+        </div>
+      </div>
+    <% end %>
+
+    <main class="<%= user_signed_in? ? 'mt-8' : 'container mx-auto mt-28 px-5' %>">
       <%= yield %>
     </main>
   </body>

@@ -4,10 +4,9 @@ class Office < ApplicationRecord
   has_many :work_schedules, dependent: :restrict_with_error
   has_many :availability_calendars, dependent: :restrict_with_error
 
-  # User associations (providers who manage this office)
+  # User associations (users who manage this office)
   has_many :office_memberships, dependent: :destroy
   has_many :users, through: :office_memberships
-  has_many :providers, -> { where(user_type: "provider") }, through: :office_memberships, source: :user
 
   # Geocoding (after adding geocoder gem)
   geocoded_by :full_address
@@ -43,12 +42,12 @@ class Office < ApplicationRecord
 
   # Instance methods for managing office memberships
   def managed_by?(user)
-    return false unless user&.provider?
+    return false unless user
     users.exists?(user.id)
   end
 
   def add_manager(user)
-    return false unless user&.provider?
+    return false unless user
     users << user unless managed_by?(user)
   end
 
@@ -76,7 +75,7 @@ class Office < ApplicationRecord
   def geocode_if_needed
     return unless address_fields_changed?
 
-    if Rails.env.test?
+    if Rails.env.test? || Rails.env.development?
       self.latitude ||= 40.7143528
       self.longitude ||= -74.0059731
     else

@@ -24,8 +24,6 @@ class Appointment < ApplicationRecord
 
   # Custom validations
   validate :scheduled_at_cannot_be_in_the_past, on: :create
-  validate :customer_must_be_customer_type, if: :customer_id?
-  validate :provider_must_be_provider_type, if: :provider_id?
   validate :provider_must_work_at_office, if: -> { provider_id? && office_id? }
 
   # Additional scopes (not provided by TemporalScopes)
@@ -68,22 +66,6 @@ class Appointment < ApplicationRecord
   def scheduled_at_cannot_be_in_the_past
     if scheduled_at.present? && scheduled_at < Time.current
       errors.add(:scheduled_at, "can't be in the past")
-    end
-  end
-
-  def customer_must_be_customer_type
-    return if customer.nil?
-
-    unless customer.customer?
-      errors.add(:customer, "must have customer user type")
-    end
-  end
-
-  def provider_must_be_provider_type
-    return if provider.nil?
-
-    unless provider.provider?
-      errors.add(:provider, "must have provider user type")
     end
   end
 

@@ -7,8 +7,7 @@ class UserTest < ActiveSupport::TestCase
       last_name: "Provider",
       email: "provider@test.com",
       password: "password123",
-      password_confirmation: "password123",
-      roles: [ "provider" ]
+      password_confirmation: "password123"
     }
   end
 
@@ -18,8 +17,7 @@ class UserTest < ActiveSupport::TestCase
       last_name: "Customer",
       email: "customer@test.com",
       password: "password123",
-      password_confirmation: "password123",
-      roles: [ "customer" ]
+      password_confirmation: "password123"
     }
   end
 
@@ -93,62 +91,6 @@ class UserTest < ActiveSupport::TestCase
     assert_includes user2.errors[:cpf], "has already been taken"
   end
 
-  # Roles array
-  test "should default to customer role" do
-    user = User.create!(valid_customer_attributes.except(:roles))
-    assert_equal [ "customer" ], user.roles
-    assert user.customer?
-    assert_not user.provider?
-  end
-
-  test "should allow provider role" do
-    user = User.create!(valid_provider_attributes)
-    assert_equal [ "provider" ], user.roles
-    assert user.provider?
-    assert_not user.customer?
-  end
-
-  test "should allow user to have both roles" do
-    user = User.create!(valid_customer_attributes.merge(roles: [ "customer", "provider" ]))
-    assert_equal [ "customer", "provider" ], user.roles
-    assert user.customer?
-    assert user.provider?
-  end
-
-  test "should validate roles are valid" do
-    user = User.new(valid_customer_attributes.merge(roles: [ "invalid_role" ]))
-    assert_not user.valid?
-    assert_includes user.errors[:roles], "contains invalid role(s): invalid_role"
-  end
-
-  test "should add role to user" do
-    user = User.create!(valid_customer_attributes)
-    assert user.add_role(:provider)
-
-    user.reload
-    assert user.customer?
-    assert user.provider?
-    assert_equal [ "customer", "provider" ], user.roles
-  end
-
-  test "should remove role from user" do
-    user = User.create!(valid_customer_attributes.merge(roles: [ "customer", "provider" ]))
-    assert user.remove_role(:customer)
-
-    user.reload
-    assert_not user.customer?
-    assert user.provider?
-    assert_equal [ "provider" ], user.roles
-  end
-
-  test "has_role? should check for role presence" do
-    user = users(:provider_customer_charlie)
-    assert user.has_role?(:provider)
-    assert user.has_role?(:customer)
-    assert user.has_role?("provider")
-    assert_not user.has_role?(:admin)
-  end
-
   # Instance methods
   test "full_name should combine first and last name" do
     user = users(:customer_alice)
@@ -161,25 +103,10 @@ class UserTest < ActiveSupport::TestCase
     assert provider.manages_office?(office)
   end
 
-  test "manages_office? should return false for customer" do
-    customer = users(:customer_alice)
+  test "manages_office? should return false for non-member" do
+    non_member = users(:customer_alice)
     office = offices(:main_office)
-    assert_not customer.manages_office?(office)
-  end
-
-  # Scopes
-  test "providers scope should return only providers" do
-    providers = User.providers
-    assert providers.all?(&:provider?)
-    assert_includes providers, users(:provider_john)
-    assert_not_includes providers, users(:customer_alice)
-  end
-
-  test "customers scope should return only customers" do
-    customers = User.customers
-    assert customers.all?(&:customer?)
-    assert_includes customers, users(:customer_alice)
-    assert_not_includes customers, users(:provider_john)
+    assert_not non_member.manages_office?(office)
   end
 
   # Password validations (from Devise)

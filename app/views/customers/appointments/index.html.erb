@@ -1,0 +1,120 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">My Appointments</h1>
+    <p class="mt-2 text-sm text-gray-600">View and manage your upcoming and past appointments</p>
+  </div>
+
+  <% unless @has_provider_access %>
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+      <div class="flex items-center justify-between">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-blue-700">
+              Want to offer your own services? <strong>Become a Provider</strong> and create your office to start receiving appointments.
+            </p>
+          </div>
+        </div>
+        <%= link_to "Become a Provider →", new_providers_onboarding_path, class: "ml-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Upcoming Appointments -->
+  <div class="mb-10">
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">Upcoming Appointments</h2>
+
+    <% if @upcoming_appointments.any? %>
+      <div class="space-y-4">
+        <% @upcoming_appointments.each do |appointment| %>
+          <div class="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900"><%= appointment.title %></h3>
+                <p class="text-gray-600 mt-1">
+                  <svg class="inline h-5 w-5 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <%= appointment.scheduled_at.strftime("%B %d, %Y at %I:%M %p") %>
+                </p>
+              </div>
+              <% status_colors = {"pending" => "bg-yellow-100 text-yellow-800", "confirmed" => "bg-green-100 text-green-800", "cancelled" => "bg-red-100 text-red-800", "completed" => "bg-blue-100 text-blue-800"} %>
+              <span class="px-3 py-1 rounded-full text-sm font-medium <%= status_colors[appointment.status] || 'bg-gray-100 text-gray-800' %>">
+                <%= appointment.status.titleize %>
+              </span>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+              <div>
+                <p class="font-medium text-gray-900">Office</p>
+                <p><%= appointment.office.name %></p>
+                <p class="text-gray-500">
+                  <%= appointment.office.city %><%= ", #{appointment.office.state}" if appointment.office.state.present? %>
+                </p>
+              </div>
+
+              <% if appointment.provider %>
+                <div>
+                  <p class="font-medium text-gray-900">Provider</p>
+                  <p><%= appointment.provider.full_name %></p>
+                </div>
+              <% end %>
+            </div>
+
+            <% if appointment.description.present? %>
+              <div class="mt-4 text-sm text-gray-600">
+                <p class="font-medium text-gray-900">Description</p>
+                <p class="mt-1"><%= appointment.description %></p>
+              </div>
+            <% end %>
+
+            <div class="mt-4 flex gap-2">
+              <%= link_to "View Details", customers_appointment_path(appointment), class: "text-blue-600 hover:text-blue-800 text-sm font-medium" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center py-12 bg-gray-50 rounded-lg">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No upcoming appointments</h3>
+        <p class="mt-1 text-sm text-gray-500">You don't have any scheduled appointments yet.</p>
+        <div class="mt-6">
+          <%= link_to "Browse Services", "#", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Past Appointments -->
+  <% if @past_appointments.any? %>
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Past Appointments</h2>
+
+      <div class="space-y-3">
+        <% @past_appointments.each do |appointment| %>
+          <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-medium text-gray-900"><%= appointment.title %></h3>
+                <p class="text-sm text-gray-600">
+                  <%= appointment.scheduled_at.strftime("%B %d, %Y") %> • <%= appointment.office.name %>
+                </p>
+              </div>
+              <% status_colors = {"pending" => "bg-yellow-100 text-yellow-800", "confirmed" => "bg-green-100 text-green-800", "cancelled" => "bg-red-100 text-red-800", "completed" => "bg-blue-100 text-blue-800"} %>
+              <span class="px-2 py-1 rounded text-xs font-medium <%= status_colors[appointment.status] || 'bg-gray-100 text-gray-800' %>">
+                <%= appointment.status.titleize %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

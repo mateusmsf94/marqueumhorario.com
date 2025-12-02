@@ -9,7 +9,6 @@ class OfficeMembership < ApplicationRecord
   validates :role, presence: true, length: { maximum: 50 }
   validates :user_id, uniqueness: { scope: :office_id,
     message: "is already a member of this office" }
-  validate :user_must_be_provider
 
   # Enums
   enum :role, {
@@ -32,15 +31,5 @@ class OfficeMembership < ApplicationRecord
 
   def deactivate!
     update!(is_active: false)
-  end
-
-  private
-
-  def user_must_be_provider
-    return if user.nil?
-
-    unless user.provider?
-      errors.add(:user, "must be a provider to manage offices")
-    end
   end
 end

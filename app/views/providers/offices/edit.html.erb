@@ -1,0 +1,25 @@
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Edit Office</h1>
+    <p class="mt-2 text-sm text-gray-600">
+      Update your office information and location details.
+    </p>
+  </div>
+
+  <!-- Form -->
+  <%= render "form", office: @office %>
+
+  <!-- Danger Zone -->
+  <div class="mt-8 bg-red-50 border-l-4 border-red-400 rounded-lg p-6">
+    <h3 class="text-lg font-medium text-red-800 mb-2">Danger Zone</h3>
+    <p class="text-sm text-red-700 mb-4">
+      Deleting this office will remove it from your account. This action cannot be undone.
+    </p>
+    <%= button_to "Delete Office",
+        providers_office_path(@office),
+        method: :delete,
+        data: { turbo_confirm: "Are you sure you want to delete this office? This cannot be undone." },
+        class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" %>
+  </div>
+</div>

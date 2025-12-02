@@ -23,16 +23,7 @@ class OfficeMembershipTest < ActiveSupport::TestCase
     assert_includes membership2.errors[:user_id], "is already a member of this office"
   end
 
-  test "should not allow customer to be office member" do
-    membership = OfficeMembership.new(
-      user: users(:customer_alice),
-      office: offices(:main_office)
-    )
-    assert_not membership.save
-    assert_includes membership.errors[:user], "must be a provider to manage offices"
-  end
-
-  test "should allow provider to be office member" do
+  test "should allow user to be office member" do
     provider = users(:provider_jane)
     office = offices(:west_coast_office)
     membership = OfficeMembership.create!(user: provider, office: office)

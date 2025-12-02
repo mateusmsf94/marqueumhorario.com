@@ -1,9 +1,8 @@
 # app/services/slot_generator.rb
 
 class SlotGenerator
-  # Using Struct for a lightweight value object for a slot
-  AvailableSlot = Struct.new(:start_time, :end_time, :status, :office_id, keyword_init: true)
-
+  # Immutable value object representing an appointment slot
+  AvailableSlot = Data.define(:start_time, :end_time, :status, :office_id)
   # @param work_schedules [Array<WorkSchedule>, WorkSchedule] the schedule rules to use
   # @param appointments [ActiveRecord::Relation<Appointment>] appointments to check against
   # @param office_id [String] optional office_id for filtering (defaults to work_schedule's office)
@@ -38,24 +37,33 @@ class SlotGenerator
 
   def generate_slots_for_day(date, work_schedule)
     slots = []
-    slot_start_time = date.to_datetime.change(hour: work_schedule.opening_time.hour, min: work_schedule.opening_time.min)
-    day_end_time = date.to_datetime.change(hour: work_schedule.closing_time.hour, min: work_schedule.closing_time.min)
     total_slot_duration = @duration + work_schedule.buffer_minutes_between_appointments.minutes
 
-    while slot_start_time + @duration <= day_end_time
-      slot_end_time = slot_start_time + @duration
+    # Use work_periods to respect lunch breaks and split shifts
+    periods = work_schedule.periods_for_date(date)
 
-      status = check_availability(slot_start_time, slot_end_time, work_schedule.buffer_minutes_between_appointments)
+    periods.each do |period|
+      period_start = period[:start_time]
+      period_end = period[:end_time]
+      slot_start_time = period_start
 
-      slots << AvailableSlot.new(
-        start_time: slot_start_time,
-        end_time: slot_end_time,
-        status: status,
-        office_id: @office_id
-      )
+      # Generate slots only within this work period
+      while slot_start_time + @duration <= period_end
+        slot_end_time = slot_start_time + @duration
 
-      slot_start_time += total_slot_duration
+        status = check_availability(slot_start_time, slot_end_time, work_schedule.buffer_minutes_between_appointments)
+
+        slots << AvailableSlot.new(
+          start_time: slot_start_time,
+          end_time: slot_end_time,
+          status: status,
+          office_id: @office_id
+        )
+
+        slot_start_time += total_slot_duration
+      end
     end
+
     slots
   end
 

@@ -1,0 +1,100 @@
+<%= form_with(model: [:providers, office], class: "space-y-6") do |f| %>
+  <% if office.errors.any? %>
+    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">
+            <%= pluralize(office.errors.count, "error") %> prohibited this office from being saved:
+          </h3>
+          <div class="mt-2 text-sm text-red-700">
+            <ul class="list-disc list-inside space-y-1">
+              <% office.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Required Fields Section -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Required Information</h3>
+
+    <div class="space-y-4">
+      <div>
+        <%= f.label :name, "Office Name", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :name,
+            class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm",
+            placeholder: "Main Office, Downtown Location, etc.",
+            required: true %>
+        <p class="mt-1 text-sm text-gray-500">A descriptive name for this office location</p>
+      </div>
+
+      <div>
+        <%= f.label :time_zone, "Time Zone", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.select :time_zone,
+            ActiveSupport::TimeZone.all.map { |tz| [tz.to_s, tz.name] },
+            { include_blank: "Select timezone..." },
+            class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm",
+            required: true %>
+        <p class="mt-1 text-sm text-gray-500">Time zone for scheduling appointments at this office</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional Address Section -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Address (Optional)</h3>
+    <p class="text-sm text-gray-500 mb-4">
+      Adding an address helps customers find your office. If you provide an address or ZIP code, city and state are required.
+    </p>
+
+    <div class="space-y-4">
+      <div>
+        <%= f.label :address, "Street Address", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :address,
+            class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm",
+            placeholder: "123 Main Street" %>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :city, "City", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :city,
+              class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm",
+              placeholder: "São Paulo" %>
+        </div>
+
+        <div>
+          <%= f.label :state, "State", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :state,
+              class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm",
+              placeholder: "SP" %>
+        </div>
+      </div>
+
+      <div class="md:w-1/2">
+        <%= f.label :zip_code, "ZIP / Postal Code", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :zip_code,
+            class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm",
+            placeholder: "01310-100" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Actions -->
+  <div class="flex items-center justify-between">
+    <%= link_to "Cancel", providers_dashboard_path,
+        class: "text-sm font-medium text-gray-700 hover:text-gray-500" %>
+
+    <%= f.submit office.new_record? ? "Create Office" : "Update Office",
+        class: "inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+  </div>
+<% end %>

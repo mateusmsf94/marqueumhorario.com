@@ -35,10 +35,13 @@ class AvailabilityCalendarTest < ActiveSupport::TestCase
     assert_equal [ "09:00", "10:15" ], busy_slots
 
     # Expected available periods
-    # Based on the SlotGenerator logic for Monday 9-5 with 60min slots and 15min buffer
-    assert_equal 4, calendar.available_periods.count
+    # Based on the SlotGenerator logic for Monday with work_periods: 9-12, 13-17
+    # With 60min slots and 15min buffer (75min total slot duration)
+    # Morning (9-12): 09:00 and 10:15 are busy
+    # Afternoon (13-17): 13:00, 14:15, 15:30 are available (16:45 won't fit)
+    assert_equal 3, calendar.available_periods.count
 
     available_times = calendar.available_periods.map { |p| Time.zone.parse(p["start_time"]).strftime("%H:%M") }.sort
-    assert_equal [ "11:30", "12:45", "14:00", "15:15" ], available_times
+    assert_equal [ "13:00", "14:15", "15:30" ], available_times
   end
 end

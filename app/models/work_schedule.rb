@@ -24,7 +24,6 @@ class WorkSchedule < ApplicationRecord
   validates_with TimeRangeValidator, start: :opening_time, end: :closing_time
 
   validate :work_day_must_accommodate_at_least_one_slot
-  validate :provider_must_be_provider_type, if: :provider_id?
   validate :provider_must_work_at_office, if: -> { provider_id? && office_id? }
   validate :work_periods_must_be_valid_format, if: -> { work_periods.present? }
 
@@ -141,14 +140,6 @@ class WorkSchedule < ApplicationRecord
     if available_minutes < appointment_duration_minutes
       errors.add(:appointment_duration_minutes,
                  "is too long for the available work hours (#{available_minutes} minutes available)")
-    end
-  end
-
-  def provider_must_be_provider_type
-    return if provider.nil?
-
-    unless provider.provider?
-      errors.add(:provider, "must have provider role")
     end
   end
 

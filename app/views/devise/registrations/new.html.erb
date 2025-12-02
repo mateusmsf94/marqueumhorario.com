@@ -9,6 +9,26 @@
   </div>
 
   <div class="field">
+    <%= f.label :first_name %><br />
+    <%= f.text_field :first_name, autocomplete: "given-name" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :last_name %><br />
+    <%= f.text_field :last_name, autocomplete: "family-name" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :phone %><br />
+    <%= f.text_field :phone, autocomplete: "tel" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :cpf, "CPF" %><br />
+    <%= f.text_field :cpf, maxlength: 11, autocomplete: "off", placeholder: "11 digits only" %>
+  </div>
+
+  <div class="field">
     <%= f.label :password %>
     <% if @minimum_password_length %>
     <em>(<%= @minimum_password_length %> characters minimum)</em>

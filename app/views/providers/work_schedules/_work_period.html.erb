@@ -1,0 +1,43 @@
+<%#
+  Partial for a single work period (time range).
+  Includes start time, end time, and remove button.
+  Can be dynamically added/removed via Stimulus controller.
+
+  Local variables:
+    - day_number: Integer 0-6 (which day this period belongs to)
+    - period: Hash with "start" and "end" keys (e.g., { "start" => "09:00", "end" => "17:00" })
+    - index: Integer index of this period within the day (0-based)
+%>
+
+<div class="work-period flex items-center gap-3 p-3 bg-gray-50 rounded-md"
+     data-work-periods-target="period">
+
+  <%# Time Inputs Container %>
+  <div class="flex-1 flex items-center gap-3">
+    <%# Start Time Input %>
+    <div class="flex-1">
+      <%= time_field_tag "schedules[#{day_number}][work_periods][#{index}][start]",
+                         period["start"] || "09:00",
+                         step: 900,
+                         class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" %>
+    </div>
+
+    <%# Separator %>
+    <span class="text-gray-500 font-medium">to</span>
+
+    <%# End Time Input %>
+    <div class="flex-1">
+      <%= time_field_tag "schedules[#{day_number}][work_periods][#{index}][end]",
+                         period["end"] || "17:00",
+                         step: 900,
+                         class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" %>
+    </div>
+  </div>
+
+  <%# Remove Button (Stimulus controller handles the removal) %>
+  <button type="button"
+          data-action="work-periods#removePeriod"
+          class="flex-shrink-0 text-red-600 hover:text-red-800 text-sm font-medium px-3 py-2 hover:bg-red-50 rounded-md transition-colors">
+    Remove
+  </button>
+</div>

@@ -1,0 +1,211 @@
+<%#
+  Week Grid Preview Page
+  Shows available appointment slots for the upcoming week after schedule setup %>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <%# Page Header %>
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Your Weekly Availability</h1>
+      <p class="mt-2 text-sm text-gray-600">
+        Schedule for
+        <strong><%= @office.name %></strong>
+        -
+        <%= @start_date.strftime("%B %d") %>
+        to
+        <%= @end_date.strftime("%B %d, %Y") %>
+      </p>
+    </div>
+
+    <%# Summary Stats %>
+    <div
+      class="
+        bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 mb-8
+        text-white
+      "
+    >
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <div class="text-sm font-medium text-blue-100">Total Appointment Slots</div>
+          <div class="text-4xl font-bold mt-1"><%= @total_slots %></div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-blue-100">Available This Week</div>
+          <div class="text-4xl font-bold mt-1"><%= @available_slots %></div>
+        </div>
+        <div>
+          <div class="text-sm font-medium text-blue-100">Working Days</div>
+          <div class="text-4xl font-bold mt-1"><%= @slots_by_day.keys.count %></div>
+        </div>
+      </div>
+    </div>
+
+    <%# Legend %>
+    <div class="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+      <span class="text-sm font-medium text-gray-700">Legend:</span>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 bg-green-100 border-2 border-green-400 rounded"></div>
+        <span class="text-sm text-gray-600">Available</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 bg-red-100 border-2 border-red-400 rounded"></div>
+        <span class="text-sm text-gray-600">Busy</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-4 h-4 bg-gray-100 border-2 border-gray-300 rounded"></div>
+        <span class="text-sm text-gray-600">Closed</span>
+      </div>
+    </div>
+
+    <%# Week Grid %>
+    <% if @slots_by_day.any? %>
+      <div
+        class="bg-white shadow-lg rounded-lg overflow-hidden"
+        data-controller="week-grid"
+      >
+
+        <%# Day Headers %>
+        <div class="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+          <% (@start_date..@end_date).each do |date| %>
+            <div
+              class="p-4 text-center border-r border-gray-200 last:border-r-0"
+              data-action="click->week-grid#editDay"
+              data-week-grid-day-param="<%= WorkSchedule::DAYS_OF_WEEK.key(date.wday) %>"
+              data-week-grid-office-id-param="<%= @office.id %>"
+              class="cursor-pointer hover:bg-blue-50 transition-colors"
+            >
+
+              <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <%= date.strftime("%a") %>
+              </div>
+              <div class="text-2xl font-bold text-gray-900 mt-1">
+                <%= date.strftime("%d") %>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">
+                <%= date.strftime("%b") %>
+              </div>
+
+              <%# Edit icon hint %>
+              <div class="mt-2 opacity-0 hover:opacity-100 transition-opacity">
+                <svg
+                  class="h-4 w-4 mx-auto text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Time Slots Grid %>
+        <div class="grid grid-cols-7">
+          <% (@start_date..@end_date).each do |date| %>
+            <div
+              class="
+                border-r border-gray-200 last:border-r-0 p-2 space-y-1 min-h-[200px] bg-white
+              "
+            >
+              <% day_slots = @slots_by_day[date] || [] %>
+
+              <% if day_slots.any? %>
+                <%# Display slots for this day %>
+                <% day_slots.each do |slot| %>
+                  <div
+                    class="
+                      <%= slot_class(slot) %> rounded px-2 py-1 text-xs text-center
+                      transition-all hover:shadow-md
+                    "
+                  >
+                    <div class="font-medium">
+                      <%= slot.start_time.strftime("%I:%M %p") %>
+                    </div>
+                    <% if slot.status == "busy" %>
+                      <div class="text-[10px] mt-0.5 opacity-75">Booked</div>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% else %>
+                <%# No slots = day is closed %>
+                <div class="flex items-center justify-center h-full text-gray-400">
+                  <div class="text-center">
+                    <svg
+                      class="h-8 w-8 mx-auto mb-2 opacity-50"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                    <div class="text-xs">Closed</div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    <% else %>
+      <%# No schedules configured yet %>
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-6 w-6 text-yellow-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800">No work schedule configured</h3>
+            <p class="mt-2 text-sm text-yellow-700">
+              You haven't set up your working hours yet. Set up your schedule
+              to see available appointment slots.
+            </p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Action Buttons %>
+    <div class="mt-8 flex items-center justify-between">
+      <%= link_to "Edit Schedule",
+      edit_providers_office_work_schedules_path(@office),
+      class:
+        "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+
+      <%= link_to "Go to Dashboard",
+      providers_dashboard_path,
+      class:
+        "inline-flex items-center px-6 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+    </div>
+
+    <%# Help Text %>
+    <div class="mt-6 text-center text-sm text-gray-500">
+      <p>💡
+        <strong>Tip:</strong>
+        Click on any day header to quickly edit that day's schedule</p>
+    </div>
+
+  </div>

@@ -223,21 +223,6 @@ class AppointmentTest < ActiveSupport::TestCase
     assert appointment.persisted?
   end
 
-  test "should not allow customer as provider" do
-    customer = users(:customer_alice)
-    office = offices(:main_office)
-
-    appointment = Appointment.new(
-      office: office,
-      provider: customer,  # Customer as provider - should fail
-      title: "Test",
-      scheduled_at: 2.days.from_now
-    )
-
-    assert_not appointment.valid?
-    assert_includes appointment.errors[:provider], "must have provider user type"
-  end
-
   test "should not allow provider from different office" do
     provider = users(:provider_jane)
     office = offices(:main_office)
@@ -276,7 +261,5 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_respond_to appointment, :provider
     assert_instance_of User, appointment.customer
     assert_instance_of User, appointment.provider
-    assert appointment.customer.customer?
-    assert appointment.provider.provider?
   end
 end

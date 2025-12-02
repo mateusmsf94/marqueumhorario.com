@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_11_26_135931) do
+ActiveRecord::Schema[8.1].define(version: 2025_11_28_224630) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -100,14 +100,12 @@ ActiveRecord::Schema[8.1].define(version: 2025_11_26_135931) do
     t.datetime "remember_created_at"
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token", limit: 255
-    t.string "roles", default: ["customer"], null: false, array: true
     t.integer "sign_in_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["cpf"], name: "index_users_on_cpf", unique: true, where: "(cpf IS NOT NULL)"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["last_name", "first_name"], name: "index_users_on_last_name_and_first_name"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
-    t.index ["roles"], name: "index_users_on_roles", using: :gin
   end
 
   create_table "work_schedules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
