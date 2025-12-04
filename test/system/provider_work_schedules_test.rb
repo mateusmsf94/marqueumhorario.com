@@ -78,8 +78,13 @@ class ProviderWorkSchedulesTest < ApplicationSystemTestCase
     find("input[name='schedules[1][is_open]']").check
 
     within "[data-work-periods-day-value='1']" do
-      fill_in "schedules[1][appointment_duration_minutes]", with: "60"
-      fill_in "schedules[1][buffer_minutes_between_appointments]", with: "15"
+      # Set values using JavaScript since inputs are hidden and controlled by Flatpickr
+      page.execute_script(
+        "document.querySelector(\"input[name='schedules[1][appointment_duration_minutes]']\").value = '01:00'"
+      )
+      page.execute_script(
+        "document.querySelector(\"input[name='schedules[1][buffer_minutes_between_appointments]']\").value = '00:15'"
+      )
     end
 
     click_button "Save Schedule"
@@ -106,12 +111,11 @@ class ProviderWorkSchedulesTest < ApplicationSystemTestCase
     find("input[name='schedules[1][is_open]']").check
 
     within "[data-work-periods-day-value='1']" do
-      # Remove the HTML5 min constraint and set invalid duration
-      # This tests server-side validation by bypassing browser validation
+      # Set invalid duration (00:00 = 0 minutes)
+      # This tests server-side validation
       page.execute_script(
-        "document.querySelector(\"input[name='schedules[1][appointment_duration_minutes]']\").removeAttribute('min')"
+        "document.querySelector(\"input[name='schedules[1][appointment_duration_minutes]']\").value = '00:00'"
       )
-      fill_in "schedules[1][appointment_duration_minutes]", with: "0"
     end
 
     click_button "Save Schedule"

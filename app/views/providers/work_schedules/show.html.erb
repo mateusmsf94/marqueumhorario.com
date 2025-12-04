@@ -11,9 +11,9 @@
         Schedule for
         <strong><%= @office.name %></strong>
         -
-        <%= @start_date.strftime("%B %d") %>
+        <%= format_date_verbose(@start_date) %>
         to
-        <%= @end_date.strftime("%B %d, %Y") %>
+        <%= format_date_verbose(@end_date) %>
       </p>
     </div>
 
@@ -125,7 +125,7 @@
                     "
                   >
                     <div class="font-medium">
-                      <%= slot.start_time.strftime("%I:%M %p") %>
+                      <%= format_time_24h(slot.start_time, timezone: @office.time_zone) %>
                     </div>
                     <% if slot.status == "busy" %>
                       <div class="text-[10px] mt-0.5 opacity-75">Booked</div>

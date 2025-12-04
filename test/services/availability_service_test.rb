@@ -40,16 +40,16 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     assert_equal 2, periods.length
 
     # Check first period (morning)
-    assert_equal 9, periods[0][:start_time].hour
-    assert_equal 0, periods[0][:start_time].min
-    assert_equal 12, periods[0][:end_time].hour
-    assert_equal 0, periods[0][:end_time].min
+    assert_equal 9, periods[0].start_time.hour
+    assert_equal 0, periods[0].start_time.min
+    assert_equal 12, periods[0].end_time.hour
+    assert_equal 0, periods[0].end_time.min
 
     # Check second period (afternoon)
-    assert_equal 13, periods[1][:start_time].hour
-    assert_equal 0, periods[1][:start_time].min
-    assert_equal 17, periods[1][:end_time].hour
-    assert_equal 0, periods[1][:end_time].min
+    assert_equal 13, periods[1].start_time.hour
+    assert_equal 0, periods[1].start_time.min
+    assert_equal 17, periods[1].end_time.hour
+    assert_equal 0, periods[1].end_time.min
   end
 
   test "subtracts appointment from beginning of period" do
@@ -74,9 +74,9 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     # First period should now be 10:15-12:00 (appointment blocks 09:00-10:15)
     # Second period unchanged: 13:00-17:00
     assert_equal 2, periods.length
-    assert_equal 10, periods[0][:start_time].hour
-    assert_equal 15, periods[0][:start_time].min
-    assert_equal 12, periods[0][:end_time].hour
+    assert_equal 10, periods[0].start_time.hour
+    assert_equal 15, periods[0].start_time.min
+    assert_equal 12, periods[0].end_time.hour
   end
 
   test "subtracts appointment from end of period" do
@@ -101,9 +101,9 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     # First period should now be 09:00-10:45 (appointment blocks 10:45-12:00)
     # Second period unchanged: 13:00-17:00
     assert_equal 2, periods.length
-    assert_equal 9, periods[0][:start_time].hour
-    assert_equal 10, periods[0][:end_time].hour
-    assert_equal 45, periods[0][:end_time].min
+    assert_equal 9, periods[0].start_time.hour
+    assert_equal 10, periods[0].end_time.hour
+    assert_equal 45, periods[0].end_time.min
   end
 
   test "subtracts appointment from middle of period splitting it" do
@@ -130,17 +130,17 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     assert_equal 3, periods.length
 
     # First split (before appointment)
-    assert_equal 9, periods[0][:start_time].hour
-    assert_equal 10, periods[0][:end_time].hour
+    assert_equal 9, periods[0].start_time.hour
+    assert_equal 10, periods[0].end_time.hour
 
     # Second split (after appointment)
-    assert_equal 11, periods[1][:start_time].hour
-    assert_equal 15, periods[1][:start_time].min
-    assert_equal 12, periods[1][:end_time].hour
+    assert_equal 11, periods[1].start_time.hour
+    assert_equal 15, periods[1].start_time.min
+    assert_equal 12, periods[1].end_time.hour
 
     # Afternoon unchanged
-    assert_equal 13, periods[2][:start_time].hour
-    assert_equal 17, periods[2][:end_time].hour
+    assert_equal 13, periods[2].start_time.hour
+    assert_equal 17, periods[2].end_time.hour
   end
 
   test "completely removes period when appointment covers it entirely" do
@@ -184,8 +184,8 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     # Morning is completely booked (09:00-10:15, 10:15-11:30, 11:30-12:45 but period ends at 12:00)
     # Only afternoon period should remain
     assert_equal 1, periods.length
-    assert_equal 13, periods[0][:start_time].hour
-    assert_equal 17, periods[0][:end_time].hour
+    assert_equal 13, periods[0].start_time.hour
+    assert_equal 17, periods[0].end_time.hour
   end
 
   test "excludes cancelled appointments from availability calculation" do
@@ -221,13 +221,13 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     assert_equal 2, periods.length
 
     # Morning: 10:15-12:00 (09:00-10:15 blocked by confirmed)
-    assert_equal 10, periods[0][:start_time].hour
-    assert_equal 15, periods[0][:start_time].min
-    assert_equal 12, periods[0][:end_time].hour
+    assert_equal 10, periods[0].start_time.hour
+    assert_equal 15, periods[0].start_time.min
+    assert_equal 12, periods[0].end_time.hour
 
     # Afternoon: unchanged
-    assert_equal 13, periods[1][:start_time].hour
-    assert_equal 17, periods[1][:end_time].hour
+    assert_equal 13, periods[1].start_time.hour
+    assert_equal 17, periods[1].end_time.hour
   end
 
   test "available? returns true when time range is available" do

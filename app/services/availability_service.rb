@@ -12,7 +12,7 @@
 #     date: Date.today
 #   )
 #   available_periods = service.available_periods
-#   # => [{ start_time: Time, end_time: Time }, ...]
+#   # => [TimePeriod, ...]
 class AvailabilityService
   attr_reader :provider, :office, :date, :work_schedule
 
@@ -24,7 +24,7 @@ class AvailabilityService
   end
 
   # Returns array of available time periods
-  # @return [Array<Hash>] array of {start_time: Time, end_time: Time}
+  # @return [Array<TimePeriod>] array of TimePeriod objects
   def available_periods
     return [] unless work_schedule
 
@@ -47,7 +47,7 @@ class AvailabilityService
     return false if start_time >= end_time
 
     available_periods.any? do |period|
-      period[:start_time] <= start_time && period[:end_time] >= end_time
+      period.start_time <= start_time && period.end_time >= end_time
     end
   end
 
@@ -56,11 +56,11 @@ class AvailabilityService
   def total_available_minutes
     total = 0
     available_periods.each do |period|
-      next unless period[:start_time] && period[:end_time]
+      next unless period.start_time && period.end_time
 
       # Convert to time objects and calculate difference in seconds
-      start_time = period[:start_time].to_time
-      end_time = period[:end_time].to_time
+      start_time = period.start_time.to_time
+      end_time = period.end_time.to_time
       seconds = end_time.to_f - start_time.to_f
       minutes = (seconds / 60).to_i
       total += minutes
@@ -98,9 +98,9 @@ class AvailabilityService
   end
 
   # Subtract appointment times from work periods
-  # @param periods [Array<Hash>] work periods with start_time and end_time
+  # @param periods [Array<TimePeriod>] work periods
   # @param appointments [ActiveRecord::Relation<Appointment>] booked appointments
-  # @return [Array<Hash>] available periods after subtracting appointments
+  # @return [Array<TimePeriod>] available periods after subtracting appointments
   def subtract_appointments_from_periods(periods, appointments)
     # Start with all work periods as available
     available = periods.dup
@@ -119,16 +119,16 @@ class AvailabilityService
 
   # Subtract a time range from a list of periods
   # This is the core algorithm that handles period splitting
-  # @param periods [Array<Hash>] current available periods
+  # @param periods [Array<TimePeriod>] current available periods
   # @param range_start [Time] start of time to subtract
   # @param range_end [Time] end of time to subtract
-  # @return [Array<Hash>] periods after subtraction
+  # @return [Array<TimePeriod>] periods after subtraction
   def subtract_time_range(periods, range_start, range_end)
     result = []
 
     periods.each do |period|
-      period_start = period[:start_time]
-      period_end = period[:end_time]
+      period_start = period.start_time
+      period_end = period.end_time
 
       # Case 1: No overlap - keep the entire period
       if range_end <= period_start || range_start >= period_end
@@ -143,20 +143,20 @@ class AvailabilityService
 
       # Case 3: Appointment overlaps start - keep the end portion
       if range_start <= period_start && range_end < period_end
-        result << { start_time: range_end, end_time: period_end }
+        result << TimePeriod.new(start_time: range_end, end_time: period_end)
         next
       end
 
       # Case 4: Appointment overlaps end - keep the start portion
       if range_start > period_start && range_end >= period_end
-        result << { start_time: period_start, end_time: range_start }
+        result << TimePeriod.new(start_time: period_start, end_time: range_start)
         next
       end
 
       # Case 5: Appointment is in the middle - split into two periods
       if range_start > period_start && range_end < period_end
-        result << { start_time: period_start, end_time: range_start }
-        result << { start_time: range_end, end_time: period_end }
+        result << TimePeriod.new(start_time: period_start, end_time: range_start)
+        result << TimePeriod.new(start_time: range_end, end_time: period_end)
         next
       end
     end

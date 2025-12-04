@@ -184,7 +184,12 @@
                 <div class="flex-1">
                   <h3 class="text-lg font-semibold text-gray-900"><%= office.name %></h3>
                   <% if office.work_schedules.active.for_provider(current_user.id).none? %>
-                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 ml-2">
+                    <span
+                      class="
+                        inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100
+                        text-yellow-800 ml-2
+                      "
+                    >
                       ⚠ No schedule
                     </span>
                   <% end %>
@@ -283,7 +288,7 @@
           <% @upcoming_appointments.group_by { |a| a.scheduled_at.to_date }.each do |date, appointments| %>
             <div class="mb-4">
               <h3 class="text-sm font-semibold text-gray-700 mb-2">
-                <%= date.strftime("%A, %B %d, %Y") %>
+                <%= format_full_datetime_24h(date) %>
               </h3>
               <div class="space-y-2">
                 <% appointments.each do |appointment| %>
@@ -309,7 +314,7 @@
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                               ></path>
                             </svg>
-                            <%= appointment.scheduled_at.strftime("%I:%M %p") %>
+                            <%= format_time_24h(appointment.scheduled_at, timezone: appointment.office.time_zone) %>
                           </p>
                           <p class="mt-1">
                             <svg

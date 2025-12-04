@@ -17,6 +17,11 @@
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
+    <%# Flatpickr CSS for 24-hour time picker %>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css"
+    >
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -34,15 +39,21 @@
               <% end %>
 
               <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <%= link_to "My Appointments", customers_appointments_path,
-                    class: "border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+                <%= link_to "My Appointments",
+                customers_appointments_path,
+                class:
+                  "border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
 
                 <% if user_is_provider? %>
-                  <%= link_to "Provider Dashboard", providers_dashboard_path,
-                      class: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+                  <%= link_to "Provider Dashboard",
+                  providers_dashboard_path,
+                  class:
+                    "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
                 <% else %>
-                  <%= link_to "Become a Provider", new_providers_onboarding_path,
-                      class: "border-transparent text-blue-600 hover:border-blue-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
+                  <%= link_to "Become a Provider",
+                  new_providers_onboarding_path,
+                  class:
+                    "border-transparent text-blue-600 hover:border-blue-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" %>
                 <% end %>
               </div>
             </div>
@@ -52,11 +63,14 @@
                 <%= current_user.full_name %>
               </span>
 
-              <%= link_to "Settings", edit_user_registration_path,
-                  class: "text-gray-500 hover:text-gray-700 text-sm font-medium" %>
+              <%= link_to "Settings",
+              edit_user_registration_path,
+              class: "text-gray-500 hover:text-gray-700 text-sm font-medium" %>
 
-              <%= button_to "Sign Out", destroy_user_session_path, method: :delete,
-                  class: "text-gray-500 hover:text-gray-700 text-sm font-medium" %>
+              <%= button_to "Sign Out",
+              destroy_user_session_path,
+              method: :delete,
+              class: "text-gray-500 hover:text-gray-700 text-sm font-medium" %>
             </div>
           </div>
         </div>

@@ -1,14 +1,12 @@
 module ApplicationHelper
+  include TimeFormatHelper
+
   def user_is_provider?
     user_signed_in? && current_user.offices.exists?
   end
 
   def user_has_appointments?
     user_signed_in? && current_user.appointments.exists?
-  end
-
-  def format_appointment_time(appointment)
-    appointment.scheduled_at.strftime("%B %d, %Y at %I:%M %p")
   end
 
   def appointment_status_badge(status)

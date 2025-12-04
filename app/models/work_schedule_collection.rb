@@ -146,8 +146,8 @@ class WorkScheduleCollection
 
     {
       work_periods: work_periods_array,
-      appointment_duration_minutes: params[:appointment_duration_minutes].present? ? params[:appointment_duration_minutes].to_i : 60,
-      buffer_minutes_between_appointments: params[:buffer_minutes_between_appointments].present? ? params[:buffer_minutes_between_appointments].to_i : 15,
+      appointment_duration_minutes: parse_time_to_minutes(params[:appointment_duration_minutes]) || 50,
+      buffer_minutes_between_appointments: parse_time_to_minutes(params[:buffer_minutes_between_appointments]) || 10,
       # Set opening/closing times for backward compatibility
       opening_time: work_periods_array.first&.dig("start") || "09:00",
       closing_time: work_periods_array.last&.dig("end") || "17:00"
@@ -179,8 +179,8 @@ class WorkScheduleCollection
   def default_schedule_params
     {
       work_periods: [{ "start" => "09:00", "end" => "17:00" }],
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15,
+      appointment_duration_minutes: 50,
+      buffer_minutes_between_appointments: 10,
       opening_time: "09:00",
       closing_time: "17:00"
     }
@@ -235,5 +235,23 @@ class WorkScheduleCollection
   # @return [Boolean] true if schedule is open/active
   def schedule_is_open?(schedule)
     schedule.is_active == true
+  end
+
+  # Convert time format (HH:MM) to minutes
+  # @param time_string [String] Time in HH:MM format (e.g., "00:50", "01:30")
+  # @return [Integer, nil] Total minutes or nil if invalid
+  def parse_time_to_minutes(time_string)
+    return nil if time_string.blank?
+
+    # If already a number (legacy format), return as integer
+    return time_string.to_i if time_string.to_s.match?(/^\d+$/)
+
+    # Parse HH:MM format (validate hours 0-23, minutes 0-59)
+    if time_string.match?(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/)
+      hours, minutes = time_string.split(":").map(&:to_i)
+      (hours * 60) + minutes
+    else
+      nil
+    end
   end
 end

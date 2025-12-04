@@ -8,8 +8,7 @@ class WorkSchedule < ApplicationRecord
   validates :provider_id, presence: true
   validates :day_of_week, presence: true,
                           numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 6 },
-                          uniqueness: { scope: [ :provider_id, :office_id, :is_active ], if: :is_active?,
-                                       message: "can only have one active schedule per day per provider per office" }
+                          uniqueness: { scope: [ :provider_id, :office_id, :is_active ], if: :is_active?, message: "can only have one active schedule per day per provider per office" }
 
   validates :opening_time, presence: true
   validates :closing_time, presence: true
@@ -52,7 +51,7 @@ class WorkSchedule < ApplicationRecord
 
   # Get work periods as Time objects for a specific date
   # @param date [Date] the date to get periods for
-  # @return [Array<Hash>] array of {start_time: Time, end_time: Time}
+  # @return [Array<TimePeriod>] array of TimePeriod objects
   def periods_for_date(date)
     return [] if work_periods.blank?
 
@@ -60,7 +59,7 @@ class WorkSchedule < ApplicationRecord
       start_parts = period["start"].split(":")
       end_parts = period["end"].split(":")
 
-      {
+      TimePeriod.new(
         start_time: date.to_datetime.change(
           hour: start_parts[0].to_i,
           min: start_parts[1].to_i,
@@ -71,7 +70,7 @@ class WorkSchedule < ApplicationRecord
           min: end_parts[1].to_i,
           sec: 0
         )
-      }
+      )
     end
   end
 
