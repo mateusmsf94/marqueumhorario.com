@@ -37,15 +37,21 @@ class User < ApplicationRecord
 
   # Manage offices
   def manages_office?(office)
+    return false unless office
     offices.exists?(office.id)
   end
 
   def add_office(office)
-    offices << office unless manages_office?(office)
+    return false unless office&.persisted?
+    return true if manages_office?(office)
+    offices << office
+    true
   end
 
   def remove_office(office)
+    return false unless office
     offices.delete(office)
+    true
   end
 
   private

@@ -62,7 +62,7 @@ bin/rails db:seed            # Load seed data
 ### Domain Model - Role-Based Multi-Tenant System
 
 **Core Entities:**
-- **Users**: Dual-role system (provider, customer, or both). Uses Devise for authentication with custom role-based authorization.
+- **Users**: Dual-role system (provider, customer, or both). Uses Devise for authentication with implicit role determination via associations.
 - **Offices**: Physical/virtual locations where services are provided. Supports geocoding, timezone-aware scheduling, and multi-provider management.
 - **WorkSchedules**: Provider availability templates. Day-based (0-6 = Sunday-Saturday) with support for complex work periods (lunch breaks, multiple shifts). Defines appointment duration and buffer times.
 - **Appointments**: Bookings with status tracking (pending, confirmed, cancelled, completed). End time calculated based on duration + buffer.
@@ -92,22 +92,79 @@ The availability calculation is the heart of the system, using a **3-layer archi
 
 **Devise Integration:**
 - Email-based authentication with trackable module (sign_in_count, last_sign_in_at, last_sign_in_ip)
-- Custom permitted parameters: first_name, last_name, phone, cpf, user_type
+- Custom permitted parameters: first_name, last_name, phone, cpf
+- All controllers use `before_action :authenticate_user!` for authentication
 
-**Role-Based Access:**
+**Implicit Dual-Role System:**
+
+The system does NOT use an explicit `roles` column. Instead, user capabilities are determined implicitly through associations:
+
 ```ruby
-User#roles → ["provider"], ["customer"], or ["provider", "customer"]
+# Provider capability: User manages at least one office
+current_user.offices.exists?  # → true means user can access provider features
+
+# Customer capability: User has booked appointments
+current_user.appointments.exists?  # → true means user has booking history
+
+# Provider appointments: Appointments where user is the service provider
+current_user.provider_appointments.exists?  # → true means user has provider bookings
+
+# Dual-role: User can have both provider and customer capabilities simultaneously
 ```
 
-Custom helper methods in ApplicationController:
-- `authenticate_provider!` - ensures user has provider role
-- `authenticate_customer!` - ensures user has customer role
-- Model methods: `user.provider?`, `user.customer?`, `user.has_role?(role)`
+**How Authorization Works:**
+
+Access control is implemented through **association scoping** rather than explicit role checks:
+
+```ruby
+# Provider controllers scope to offices user manages
+current_user.offices                    # Only offices where user is a member
+current_user.provider_appointments      # Only appointments where user is provider
+current_user.work_schedules             # Only user's work schedules
+
+# Customer controllers scope to appointments user booked
+current_user.appointments               # Only appointments where user is customer
+
+# Provider access guard (example from Providers::DashboardController)
+def ensure_has_office
+  unless current_user.offices.exists?
+    redirect_to new_providers_onboarding_path,
+      notice: "Welcome! Let's create your first office to get started."
+  end
+end
+```
+
+**Office-Level Roles:**
+
+In addition to user capabilities, `office_memberships` has granular permissions:
+
+```ruby
+# office_memberships.role values:
+- "owner"   # Full control, can delete office
+- "admin"   # Can manage schedules and appointments
+- "member"  # Can view office data (default)
+
+# Example usage:
+office_membership = current_user.office_memberships.find_by(office: office)
+office_membership.role  # → "owner", "admin", or "member"
+```
+
+**User Model Helper Methods:**
+
+```ruby
+# app/models/user.rb
+user.full_name              # Returns "FirstName LastName"
+user.manages_office?(office) # Check if user has membership to office
+user.add_office(office)      # Add user to office
+user.remove_office(office)   # Remove user from office
+```
 
 **Business Rules:**
-- Only providers can manage offices
-- Customers can only book appointments
+- Any authenticated user can book appointments (customer capability)
+- Only users with office memberships can access provider features
+- Office access is checked via `current_user.offices` scoping
 - CPF (Brazilian ID) is optional but unique when provided (normalized to digits-only)
+- Users can act as both provider and customer simultaneously
 
 ### Reusable Patterns
 
@@ -144,7 +201,7 @@ validates_with TimeRangeValidator, start: :opening_time, end: :closing_time
 
 2. **Multi-Office Provider Model**: Single provider can manage multiple offices with different schedules per office per day.
 
-3. **No Appointment Duration in DB**: Appointment length is determined by provider's WorkSchedule, not per-appointment. This ensures consistency across a provider's bookings.
+3. **Appointment Duration Storage**: Appointment duration is stored in `appointments.duration_minutes` column (default: 50 minutes). Duration is automatically set from the provider's WorkSchedule via `before_save` callback, but can be customized per appointment if needed. This provides consistency while allowing flexibility.
 
 4. **Timezone-Aware Scheduling**: Each office has `time_zone` attribute (ActiveSupport::TimeZone) for correct cross-timezone scheduling.
 
@@ -215,7 +272,7 @@ The `bin/ci` script runs the full CI suite:
 
 **Business Logic**: `app/services/availability_service.rb`, `app/services/slot_generator.rb`, `app/services/overlap_checker.rb`
 
-**Authentication**: `app/controllers/application_controller.rb` (authenticate_provider!, authenticate_customer!)
+**Authentication**: `app/controllers/application_controller.rb` (Devise integration, configure_permitted_parameters)
 
 **Reusable Concerns**: `app/models/concerns/temporal_scopes.rb`
 

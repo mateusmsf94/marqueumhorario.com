@@ -4,6 +4,6 @@ class RemoveRolesFromUsers < ActiveRecord::Migration[8.1]
     remove_index :users, :roles
 
     # Remove the roles column
-    remove_column :users, :roles, :string, array: true, default: ['customer'], null: false
+    remove_column :users, :roles, :string, array: true, default: [ 'customer' ], null: false
   end
 end

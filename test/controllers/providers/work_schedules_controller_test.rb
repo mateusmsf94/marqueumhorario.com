@@ -4,7 +4,7 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @office = offices(:main_office)
     @provider = users(:provider_john)
-    
+
     @new_office = Office.create!(name: "Test Office for Work Schedules", time_zone: "America/New_York")
     @new_provider = User.create!(first_name: "Test", last_name: "Provider", email: "test_ws_controller@example.com", password: "password", password_confirmation: "password")
     @new_office.add_manager(@new_provider)
@@ -81,7 +81,7 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
       office: @new_office,
       provider: @new_provider,
       day_of_week: 1,
-      work_periods: [{ "start" => "09:00", "end" => "17:00" }],
+      work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
       appointment_duration_minutes: 60,
       buffer_minutes_between_appointments: 15,
       opening_time: "09:00",
@@ -100,7 +100,7 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
       office: @new_office,
       provider: @new_provider,
       day_of_week: 1,
-      work_periods: [{ "start" => "09:00", "end" => "17:00" }],
+      work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
       appointment_duration_minutes: 60,
       buffer_minutes_between_appointments: 15,
       opening_time: "09:00",

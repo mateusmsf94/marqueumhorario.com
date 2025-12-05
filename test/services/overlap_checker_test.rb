@@ -143,9 +143,26 @@ class OverlapCheckerTest < ActiveSupport::TestCase
   test "should use default duration when none provided" do
     appointment = Appointment.create!(title: "Default Duration", scheduled_at: @base_time, status: :pending, office: @office)
 
-    # Without providing duration, it should use default (60 minutes from the service)
     checker = OverlapChecker.new([ appointment ])
-    assert checker.any_overlap?(@base_time, @base_time + 1.hour), "Should use default duration"
+    # appointment uses its duration_minutes (defaults to Appointment::DEFAULT_DURATION_MINUTES)
+    assert checker.any_overlap?(@base_time, @base_time + Appointment::DEFAULT_DURATION_MINUTES.minutes),
+           "Should use appointment duration_minutes when no duration is provided"
+  end
+
+  test "uses appointment-specific duration when none provided to checker" do
+    appointment = Appointment.create!(
+      title: "Custom Duration",
+      scheduled_at: @base_time,
+      status: :pending,
+      office: @office,
+      duration_minutes: 30
+    )
+
+    checker = OverlapChecker.new([ appointment ])
+
+    assert checker.any_overlap?(@base_time, @base_time + 20.minutes)
+    assert_not checker.any_overlap?(@base_time + 40.minutes, @base_time + 1.hour),
+               "Should respect appointment's shorter duration"
   end
 
   # Empty appointments array

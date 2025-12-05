@@ -3,11 +3,18 @@
 # from a single form submission.
 class WorkScheduleCollection
   include ActiveModel::Model
+  include TimeParsing
 
   attr_accessor :office, :provider, :schedules
 
   # Use the same day constants from WorkSchedule model
   DAYS_OF_WEEK = WorkSchedule::DAYS_OF_WEEK
+
+  DEFAULT_APPOINTMENT_TIME = 50
+  DEFAULT_BUFFER_TIME = 10
+  DEFAULT_START_TIME = "09:00"
+  DEFAULT_END_TIME = "17:00"
+
 
   # Initialize a new collection with 7 blank schedules (one per day)
   #
@@ -146,11 +153,11 @@ class WorkScheduleCollection
 
     {
       work_periods: work_periods_array,
-      appointment_duration_minutes: parse_time_to_minutes(params[:appointment_duration_minutes]) || 50,
-      buffer_minutes_between_appointments: parse_time_to_minutes(params[:buffer_minutes_between_appointments]) || 10,
+      appointment_duration_minutes: parse_time_to_minutes(params[:appointment_duration_minutes]) || DEFAULT_APPOINTMENT_TIME,
+      buffer_minutes_between_appointments: parse_time_to_minutes(params[:buffer_minutes_between_appointments]) || DEFAULT_BUFFER_TIME,
       # Set opening/closing times for backward compatibility
-      opening_time: work_periods_array.first&.dig("start") || "09:00",
-      closing_time: work_periods_array.last&.dig("end") || "17:00"
+      opening_time: work_periods_array.first&.dig("start") || DEFAULT_START_TIME,
+      closing_time: work_periods_array.last&.dig("end") || DEFAULT_END_TIME
     }
   end
 
@@ -161,7 +168,7 @@ class WorkScheduleCollection
   # @param periods_params [Hash, nil] Work periods from form params
   # @return [Array<Hash>] Array of period hashes
   def parse_work_periods(periods_params)
-    return [{ "start" => "09:00", "end" => "17:00" }] if periods_params.blank?
+    return [ { "start" => DEFAULT_START_TIME, "end" => DEFAULT_END_TIME } ] if periods_params.blank?
 
     # periods_params comes as a hash with string keys "0", "1", etc.
     # We need to convert to array and stringify the inner hash keys
@@ -178,11 +185,11 @@ class WorkScheduleCollection
   # @return [Hash] Default attributes
   def default_schedule_params
     {
-      work_periods: [{ "start" => "09:00", "end" => "17:00" }],
-      appointment_duration_minutes: 50,
-      buffer_minutes_between_appointments: 10,
-      opening_time: "09:00",
-      closing_time: "17:00"
+      work_periods: [ { "start" => DEFAULT_START_TIME, "end" => DEFAULT_END_TIME } ],
+      appointment_duration_minutes: DEFAULT_APPOINTMENT_TIME,
+      buffer_minutes_between_appointments: DEFAULT_BUFFER_TIME,
+      opening_time: DEFAULT_START_TIME,
+      closing_time: DEFAULT_END_TIME
     }
   end
 
@@ -237,21 +244,5 @@ class WorkScheduleCollection
     schedule.is_active == true
   end
 
-  # Convert time format (HH:MM) to minutes
-  # @param time_string [String] Time in HH:MM format (e.g., "00:50", "01:30")
-  # @return [Integer, nil] Total minutes or nil if invalid
-  def parse_time_to_minutes(time_string)
-    return nil if time_string.blank?
-
-    # If already a number (legacy format), return as integer
-    return time_string.to_i if time_string.to_s.match?(/^\d+$/)
-
-    # Parse HH:MM format (validate hours 0-23, minutes 0-59)
-    if time_string.match?(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/)
-      hours, minutes = time_string.split(":").map(&:to_i)
-      (hours * 60) + minutes
-    else
-      nil
-    end
-  end
+  # Note: parse_time_to_minutes is now provided by TimeParsing concern
 end

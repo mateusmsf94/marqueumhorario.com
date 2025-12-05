@@ -1,4 +1,6 @@
 class WorkSchedule < ApplicationRecord
+  include TimeParsing
+
   # Associations
   belongs_to :office
   belongs_to :provider, class_name: "User"
@@ -23,8 +25,8 @@ class WorkSchedule < ApplicationRecord
   validates_with TimeRangeValidator, start: :opening_time, end: :closing_time
 
   validate :work_day_must_accommodate_at_least_one_slot
-  validate :provider_must_work_at_office, if: -> { provider_id? && office_id? }
-  validate :work_periods_must_be_valid_format, if: -> { work_periods.present? }
+  validates_with ProviderOfficeValidator, if: -> { provider_id? && office_id? }
+  validates_with WorkPeriodValidator, if: -> { work_periods.present? }
 
   # Scopes
   scope :for_office, ->(office_id) { where(office_id: office_id) }
@@ -56,20 +58,9 @@ class WorkSchedule < ApplicationRecord
     return [] if work_periods.blank?
 
     work_periods.map do |period|
-      start_parts = period["start"].split(":")
-      end_parts = period["end"].split(":")
-
       TimePeriod.new(
-        start_time: date.to_datetime.change(
-          hour: start_parts[0].to_i,
-          min: start_parts[1].to_i,
-          sec: 0
-        ),
-        end_time: date.to_datetime.change(
-          hour: end_parts[0].to_i,
-          min: end_parts[1].to_i,
-          sec: 0
-        )
+        start_time: time_string_to_datetime(period["start"], date),
+        end_time: time_string_to_datetime(period["end"], date)
       )
     end
   end
@@ -79,11 +70,8 @@ class WorkSchedule < ApplicationRecord
     return legacy_total_work_minutes if work_periods.blank?
 
     work_periods.sum do |period|
-      start_parts = period["start"].split(":").map(&:to_i)
-      end_parts = period["end"].split(":").map(&:to_i)
-
-      start_minutes = start_parts[0] * 60 + start_parts[1]
-      end_minutes = end_parts[0] * 60 + end_parts[1]
+      start_minutes = parse_time_to_minutes(period["start"])
+      end_minutes = parse_time_to_minutes(period["end"])
 
       end_minutes - start_minutes
     end
@@ -142,69 +130,10 @@ class WorkSchedule < ApplicationRecord
     end
   end
 
-  def provider_must_work_at_office
-    return if provider.nil? || office.nil?
+  def time_string_to_datetime(time_str, date)
+    parsed = parse_time_string(time_str)
+    return nil unless parsed
 
-    unless office.managed_by?(provider)
-      errors.add(:provider, "must work at this office")
-    end
-  end
-
-  def work_periods_must_be_valid_format
-    unless work_periods.is_a?(Array)
-      errors.add(:work_periods, "must be an array")
-      return
-    end
-
-    work_periods.each_with_index do |period, index|
-      unless period.is_a?(Hash) && period["start"].present? && period["end"].present?
-        errors.add(:work_periods, "period #{index + 1} must have 'start' and 'end' times")
-        next
-      end
-
-      # Validate time format (HH:MM)
-      unless valid_time_format?(period["start"]) && valid_time_format?(period["end"])
-        errors.add(:work_periods, "period #{index + 1} has invalid time format (use HH:MM)")
-        next
-      end
-
-      # Validate end time is after start time
-      if time_in_minutes(period["end"]) <= time_in_minutes(period["start"])
-        errors.add(:work_periods, "period #{index + 1} end time must be after start time")
-      end
-    end
-
-    # Validate periods don't overlap
-    validate_no_period_overlaps
-  end
-
-  def validate_no_period_overlaps
-    return if work_periods.size < 2
-
-    work_periods.each_with_index do |period1, i|
-      work_periods[(i + 1)..-1].each_with_index do |period2, j|
-        if periods_overlap?(period1, period2)
-          errors.add(:work_periods, "periods #{i + 1} and #{i + j + 2} overlap")
-        end
-      end
-    end
-  end
-
-  def periods_overlap?(period1, period2)
-    start1 = time_in_minutes(period1["start"])
-    end1 = time_in_minutes(period1["end"])
-    start2 = time_in_minutes(period2["start"])
-    end2 = time_in_minutes(period2["end"])
-
-    (start1 < end2) && (end1 > start2)
-  end
-
-  def valid_time_format?(time_str)
-    time_str.match?(/\A([01]?[0-9]|2[0-3]):[0-5][0-9]\z/)
-  end
-
-  def time_in_minutes(time_str)
-    parts = time_str.split(":").map(&:to_i)
-    parts[0] * 60 + parts[1]
+    date.to_datetime.change(hour: parsed[:hour], min: parsed[:minute], sec: 0)
   end
 end

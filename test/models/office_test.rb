@@ -179,7 +179,9 @@ class OfficeTest < ActiveSupport::TestCase
       longitude: nil
     ))
 
-    office.save!
+    with_geocoding_enabled do
+      office.save!
+    end
 
     # In test mode, geocoder returns default stub coordinates
     assert_not_nil office.latitude
@@ -195,5 +197,29 @@ class OfficeTest < ActiveSupport::TestCase
   test "should default time_zone to UTC" do
     office = Office.new(name: "Test")
     assert_equal "UTC", office.time_zone
+  end
+
+  private
+
+  def with_geocoding_enabled
+    previous = Rails.application.config.geocoding_enabled
+    Rails.application.config.geocoding_enabled = true
+    Geocoder::Lookup::Test.add_stub(
+      "1600 Amphitheatre Parkway, Mountain View, CA, 94043",
+      [
+        {
+          "coordinates" => [ 37.422, -122.084 ],
+          "address" => "1600 Amphitheatre Parkway, Mountain View, CA, 94043",
+          "state" => "California",
+          "state_code" => "CA",
+          "country" => "United States",
+          "country_code" => "US"
+        }
+      ]
+    )
+    yield
+  ensure
+    Rails.application.config.geocoding_enabled = previous
+    Geocoder::Lookup::Test.reset
   end
 end

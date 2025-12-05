@@ -8,13 +8,13 @@ class AddProviderToWorkSchedules < ActiveRecord::Migration[8.1]
 
     # Add new unique index including provider (provider + office + day + is_active)
     add_index :work_schedules,
-              [:provider_id, :office_id, :day_of_week, :is_active],
+              [ :provider_id, :office_id, :day_of_week, :is_active ],
               unique: true,
               where: "is_active = true",
               name: "index_work_schedules_unique_active_per_provider_office_day"
 
     # Add composite indexes for common queries
-    add_index :work_schedules, [:provider_id, :day_of_week]
-    add_index :work_schedules, [:provider_id, :office_id]
+    add_index :work_schedules, [ :provider_id, :day_of_week ]
+    add_index :work_schedules, [ :provider_id, :office_id ]
   end
 end

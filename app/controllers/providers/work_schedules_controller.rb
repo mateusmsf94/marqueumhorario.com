@@ -32,41 +32,31 @@ class Providers::WorkSchedulesController < ApplicationController
   end
 
   def show
-    # Load all active work schedules for this provider at this office
-    @work_schedules = @office.work_schedules
-                            .active
-                            .for_provider(current_user.id)
+    # Use service object to calculate weekly availability
+    calculator = WeeklyAvailabilityCalculator.new(
+      office: @office,
+      provider: current_user,
+      week_start: Date.today.beginning_of_week
+    )
 
-    # Define date range for the grid (current week: Monday to Sunday)
+    result = calculator.call
+
+    # Set instance variables for the view
+    @slots_by_day = result[:slots_by_day]
+    @total_slots = result[:total_slots]
+    @available_slots = result[:available_slots]
+    @start_date = result[:week_start]
+    @end_date = result[:week_end]
+
+  rescue WeeklyAvailabilityCalculator::CalculationError => e
+    # Handle errors gracefully (e.g., no schedules set up yet)
+    Rails.logger.error("Weekly availability calculation error: #{e.message}")
+    @slots_by_day = {}
+    @total_slots = 0
+    @available_slots = 0
     @start_date = Date.today.beginning_of_week
     @end_date = Date.today.end_of_week
-
-    # Get appointments for the week (will be empty for new setup)
-    @appointments = Appointment
-                      .for_provider(current_user.id)
-                      .for_office(@office.id)
-                      .blocking_time
-                      .where(scheduled_at: @start_date..@end_date)
-
-    # Generate slots using SlotGenerator service
-    begin
-      generator = SlotGenerator.new(@work_schedules, @appointments, office_id: @office.id)
-      all_slots = generator.call(@start_date, @end_date)
-
-      # Group slots by day for easier rendering in the grid
-      # Result: { Date => [AvailableSlot, AvailableSlot, ...], ... }
-      @slots_by_day = all_slots.group_by { |slot| slot.start_time.to_date }
-
-    rescue StandardError => e
-      # Handle errors gracefully (e.g., no schedules set up yet)
-      Rails.logger.error("SlotGenerator error: #{e.message}")
-      @slots_by_day = {}
-      flash.now[:alert] = "Unable to generate appointment slots. Please check your work schedule configuration."
-    end
-
-    # Calculate summary stats for display
-    @total_slots = all_slots&.count || 0
-    @available_slots = all_slots&.count { |slot| slot.status == "available" } || 0
+    flash.now[:alert] = "Unable to generate appointment slots. Please check your work schedule configuration."
   end
   # get /providers/offices/:office_id/work_schedules/edit
   # display form for editing existing weekly schedule

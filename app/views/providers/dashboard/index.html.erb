@@ -283,9 +283,9 @@
         class: "text-sm text-blue-600 hover:text-blue-800 font-medium" %>
       </div>
 
-      <% if @upcoming_appointments.any? %>
+      <% if @appointments_presenter.appointments.any? %>
         <div class="space-y-3">
-          <% @upcoming_appointments.group_by { |a| a.scheduled_at.to_date }.each do |date, appointments| %>
+          <% @appointments_presenter.grouped_by_date.each do |date, appointments| %>
             <div class="mb-4">
               <h3 class="text-sm font-semibold text-gray-700 mb-2">
                 <%= format_full_datetime_24h(date) %>

@@ -1,4 +1,6 @@
 class Appointment < ApplicationRecord
+  DEFAULT_DURATION_MINUTES = 50
+
   # Associations
   belongs_to :office
   belongs_to :customer, class_name: "User", optional: true
@@ -7,6 +9,7 @@ class Appointment < ApplicationRecord
   # Concerns
   include TemporalScopes
   temporal_scope_field :scheduled_at
+  attribute :duration_minutes, :integer, default: DEFAULT_DURATION_MINUTES
 
   # Validations
   validates :office_id, presence: true
@@ -24,7 +27,9 @@ class Appointment < ApplicationRecord
 
   # Custom validations
   validate :scheduled_at_cannot_be_in_the_past, on: :create
-  validate :provider_must_work_at_office, if: -> { provider_id? && office_id? }
+  validates_with ProviderOfficeValidator, if: -> { provider_id? && office_id? }
+
+  before_save :set_duration_from_work_schedule
 
   # Additional scopes (not provided by TemporalScopes)
   scope :by_status, ->(status) { where(status: status) }
@@ -38,27 +43,10 @@ class Appointment < ApplicationRecord
     scheduled_at
   end
 
-  # Calculate end time based on work schedule duration and buffer
-  # @return [Time] the end time of the appointment (includes buffer time)
+  # Calculate end time based on stored duration
+  # @return [Time] the end time of the appointment
   def end_time
-    return scheduled_at unless provider && office
-
-    # Find the work schedule for this appointment
-    work_schedule = WorkSchedule
-      .active
-      .for_provider(provider_id)
-      .for_office(office_id)
-      .for_day(scheduled_at.wday)
-      .first
-
-    if work_schedule
-      # Appointment blocks time for duration + buffer
-      total_minutes = work_schedule.appointment_duration_minutes + work_schedule.buffer_minutes_between_appointments
-      scheduled_at + total_minutes.minutes
-    else
-      # Default to 60 minutes if no schedule found
-      scheduled_at + 60.minutes
-    end
+    scheduled_at + duration_minutes.minutes
   end
 
   private
@@ -69,11 +57,21 @@ class Appointment < ApplicationRecord
     end
   end
 
-  def provider_must_work_at_office
-    return if provider.nil? || office.nil?
+  def set_duration_from_work_schedule
+    return unless provider && office && scheduled_at
 
-    unless office.managed_by?(provider)
-      errors.add(:provider, "must work at this office")
+    work_schedule = WorkSchedule
+      .active
+      .for_provider(provider_id)
+      .for_office(office_id)
+      .for_day(scheduled_at.wday)
+      .first
+
+    if work_schedule
+      total_minutes = work_schedule.appointment_duration_minutes + work_schedule.buffer_minutes_between_appointments
+      self.duration_minutes = total_minutes
+    else
+      self.duration_minutes = DEFAULT_DURATION_MINUTES
     end
   end
 end

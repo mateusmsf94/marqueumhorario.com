@@ -3,10 +3,21 @@ class Providers::DashboardController < ApplicationController
   before_action :ensure_has_office
 
   def index
-    @offices = current_user.offices.active
+    @offices = current_user.offices.active.includes(:work_schedules)
     @work_schedules = current_user.work_schedules.active
-    @upcoming_appointments = current_user.provider_appointments.upcoming.limit(20)
-    @pending_appointments = current_user.provider_appointments.by_status(:pending).upcoming
+
+    @pending_appointments = current_user.provider_appointments
+                                     .by_status(:pending)
+                                     .upcoming
+                                     .includes(:customer, :office)
+                                     .limit(20)
+
+    upcoming_appointments = current_user.provider_appointments
+                                      .upcoming
+                                      .includes(:customer, :office)
+                                      .limit(20)
+
+    @appointments_presenter = AppointmentsPresenter.new(upcoming_appointments)
   end
 
   private

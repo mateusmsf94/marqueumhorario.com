@@ -10,7 +10,6 @@ class SlotGenerator
     @work_schedules = Array(work_schedules)
     @office_id = office_id || @work_schedules.first&.office_id
     @appointments = appointments.select { |apt| apt.office_id == @office_id }
-    # Remove global @duration - each day has its own duration
   end
 
   # Generates slots for a given date range.
@@ -74,6 +73,6 @@ class SlotGenerator
     checker = OverlapChecker.new(@appointments, duration: duration)
     effective_end_time = end_time + buffer_minutes.minutes
     is_busy = checker.any_overlap?(start_time, effective_end_time)
-    is_busy ? "busy" : "available"
+    is_busy ? SlotStatus::BUSY : SlotStatus::AVAILABLE
   end
 end

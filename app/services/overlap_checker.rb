@@ -53,7 +53,7 @@ class OverlapChecker
   # @param apt_start [Time, DateTime] when the appointment starts
   # @return [Time, DateTime] when the appointment ends
   def calculate_appointment_end(appointment, apt_start)
-    duration = @duration || default_duration(appointment)
+    duration = @duration ? normalize_duration(@duration) : default_duration(appointment)
     apt_start + duration
   end
 
@@ -62,8 +62,11 @@ class OverlapChecker
   # @param appointment [Appointment] the appointment
   # @return [ActiveSupport::Duration] default duration
   def default_duration(appointment)
-    # For now, default to 60 minutes if no duration is provided
-    # In a real system, this might come from the appointment itself or a configuration
-    60.minutes
+    minutes = appointment.duration_minutes || Appointment::DEFAULT_DURATION_MINUTES
+    minutes.minutes
+  end
+
+  def normalize_duration(duration)
+    duration.is_a?(ActiveSupport::Duration) ? duration : duration.to_i.minutes
   end
 end

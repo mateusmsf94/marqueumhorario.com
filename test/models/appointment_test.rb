@@ -262,4 +262,20 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_instance_of User, appointment.customer
     assert_instance_of User, appointment.provider
   end
+
+  test "defaults duration_minutes when no work schedule is found" do
+    provider = users(:provider_jane)
+    office = offices(:main_office)
+    sunday = Time.current.next_occurring(:sunday).change(hour: 10, min: 0)
+
+    appointment = Appointment.create!(
+      office: office,
+      provider: provider,
+      title: "No schedule fallback",
+      scheduled_at: sunday,
+      status: :pending
+    )
+
+    assert_equal Appointment::DEFAULT_DURATION_MINUTES, appointment.duration_minutes
+  end
 end

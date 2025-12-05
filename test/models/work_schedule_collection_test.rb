@@ -45,7 +45,7 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
     assert monday.is_active
     assert_equal 60, monday.appointment_duration_minutes
     assert_equal 15, monday.buffer_minutes_between_appointments
-    assert_equal [{ "start" => "09:00", "end" => "17:00" }], monday.work_periods
+    assert_equal [ { "start" => "09:00", "end" => "17:00" } ], monday.work_periods
   end
 
   test "validates only open days" do
@@ -117,7 +117,7 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
       office: @new_office,
       provider: @new_provider,
       day_of_week: 1,
-      work_periods: [{ "start" => "09:00", "end" => "17:00" }],
+      work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
       appointment_duration_minutes: 60,
       buffer_minutes_between_appointments: 15,
       opening_time: "09:00",
