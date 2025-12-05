@@ -1,6 +1,7 @@
 class Office < ApplicationRecord
-  # Address fields for change detection
-  ADDRESS_FIELDS = %i[address city state zip_code].freeze
+  # Include concerns for separation of responsibilities
+  include Geocodable
+  include MembershipManagement
 
   # Associations
   has_many :appointments, dependent: :restrict_with_error
@@ -10,10 +11,6 @@ class Office < ApplicationRecord
   # User associations (users who manage this office)
   has_many :office_memberships, dependent: :destroy
   has_many :users, through: :office_memberships
-
-  # Geocoding (after adding geocoder gem)
-  geocoded_by :full_address
-  after_validation :geocode_address_if_needed
 
   # Validations
   validates :name, presence: true, length: { maximum: 255 }
@@ -43,59 +40,23 @@ class Office < ApplicationRecord
   scope :by_state, ->(state) { where(state: state) }
   scope :geocoded, -> { where.not(latitude: nil, longitude: nil) }
 
-  # Instance methods for managing office memberships
-  def managed_by?(user)
-    return false unless user
-    users.exists?(user.id)
-  end
-
-  def add_manager(user)
-    return false unless user
-    users << user unless managed_by?(user)
-  end
-
-  def remove_manager(user)
-    users.delete(user)
-  end
-
-  def active_managers
-    users.where(office_memberships: { is_active: true })
-  end
-
-  def address_fields_changed?
-    return false unless address_fields_present?
-    return true if new_record?
-    any_address_field_changed?
-  end
-
   private
 
-  def geocode_address_if_needed
-    return unless address_fields_changed?
-    GeocodeOfficeService.new(self).call
-  end
-
-  def full_address
-    [ address, city, state, zip_code ].compact.join(", ")
-  end
-
+  # Validate that time zone is a valid ActiveSupport::TimeZone
+  #
+  # @return [void]
   def time_zone_must_be_valid
     return if time_zone.blank?
 
     errors.add(:time_zone, "#{time_zone} is not a valid time zone") unless ActiveSupport::TimeZone[time_zone]
   end
 
-  def address_fields_present?
-    address.present? || city.present? || state.present? || zip_code.present?
-  end
-
+  # Validate address completeness - require city and state if address or zip provided
+  #
+  # @return [void]
   def address_completeness
     if (address.present? || zip_code.present?) && (city.blank? || state.blank?)
       errors.add(:base, "City and state are required when address or zip code is provided")
     end
-  end
-
-  def any_address_field_changed?
-    ADDRESS_FIELDS.any? { |field| will_save_change_to_attribute?(field) }
   end
 end

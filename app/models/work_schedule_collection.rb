@@ -1,22 +1,14 @@
 # Form object for managing a week's worth of WorkSchedule records as a single unit.
-# This encapsulates the complexity of creating/updating 7 separate database records
-# from a single form submission.
+# This delegates to specialized services for parsing, loading, and persistence.
+#
+# Refactored to follow Single Responsibility Principle - this class now only
+# coordinates between services and provides the ActiveModel interface for forms.
 class WorkScheduleCollection
   include ActiveModel::Model
-  include TimeParsing
 
   attr_accessor :office, :provider, :schedules
 
-  # Use the same day constants from WorkSchedule model
-  DAYS_OF_WEEK = WorkSchedule::DAYS_OF_WEEK
-
-  DEFAULT_APPOINTMENT_TIME = 50
-  DEFAULT_BUFFER_TIME = 10
-  DEFAULT_START_TIME = "09:00"
-  DEFAULT_END_TIME = "17:00"
-
-
-  # Initialize a new collection with 7 blank schedules (one per day)
+  # Initialize a new collection with 7 schedules (one per day)
   #
   # @param office [Office] The office these schedules belong to
   # @param provider [User] The provider (user) creating the schedules
@@ -24,7 +16,12 @@ class WorkScheduleCollection
   def initialize(office:, provider:, params: {})
     @office = office
     @provider = provider
-    @schedules = build_schedules(params)
+    @original_params = params
+    @schedules = if params.present?
+      parse_schedules_from_params(params)
+    else
+      build_blank_schedules
+    end
   end
 
   # Class method to load existing schedules for editing
@@ -34,8 +31,7 @@ class WorkScheduleCollection
   # @return [WorkScheduleCollection] Collection with existing or blank schedules
   def self.load_existing(office:, provider:)
     collection = new(office: office, provider: provider)
-    collection.instance_variable_set(:@schedules, [])
-    collection.send(:load_existing_schedules)
+    collection.instance_variable_set(:@schedules, load_schedules(office, provider))
     collection
   end
 
@@ -44,23 +40,9 @@ class WorkScheduleCollection
   #
   # @return [Boolean] true if all saves succeeded, false otherwise
   def save
-    # Validate all open schedules and populate errors
-    unless valid?
-      # Explicitly call valid? on each open schedule to populate errors
-      schedules.select { |s| schedule_is_open?(s) }.each(&:valid?)
-      return false
-    end
+    return false unless valid?
 
-    ActiveRecord::Base.transaction do
-      schedules.each do |schedule|
-        next unless schedule_is_open?(schedule)
-        schedule.save!
-      end
-    end
-    true
-  rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error("WorkScheduleCollection save failed: #{e.message}")
-    false
+    persistence_service.save
   end
 
   # Update existing schedules
@@ -70,28 +52,9 @@ class WorkScheduleCollection
   # @return [Boolean] true if update succeeded
   def update(params)
     update_schedules_from_params(params)
+    return false unless valid?
 
-    # Validate all open schedules and populate errors
-    unless valid?
-      # Explicitly call valid? on each open schedule to populate errors
-      schedules.select { |s| schedule_is_open?(s) }.each(&:valid?)
-      return false
-    end
-
-    ActiveRecord::Base.transaction do
-      schedules.each do |schedule|
-        if schedule_is_open?(schedule)
-          schedule.save!
-        elsif schedule.persisted?
-          # Mark previously open days as inactive if now closed
-          schedule.update!(is_active: false)
-        end
-      end
-    end
-    true
-  rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error("WorkScheduleCollection update failed: #{e.message}")
-    false
+    persistence_service.update
   end
 
   # Validate only schedules marked as "open"
@@ -99,10 +62,25 @@ class WorkScheduleCollection
   #
   # @return [Boolean] true if all open schedules are valid
   def valid?
-    open_schedules = schedules.select { |s| schedule_is_open?(s) }
+    open_schedules = schedules.select(&:is_active?)
     return true if open_schedules.empty?
 
-    open_schedules.all?(&:valid?)
+    # Explicitly validate and populate errors for open schedules
+    is_valid = open_schedules.all?(&:valid?)
+    
+    # Populate errors from individual schedules for display
+    unless is_valid
+      open_schedules.each do |schedule|
+        next if schedule.errors.empty?
+        
+        day_name = schedule.day_name
+        schedule.errors.full_messages.each do |message|
+          errors.add(:base, "#{day_name}: #{message}")
+        end
+      end
+    end
+    
+    is_valid
   end
 
   # Get schedule for a specific day of the week
@@ -123,126 +101,72 @@ class WorkScheduleCollection
 
   private
 
-  # Build 7 WorkSchedule objects (one for each day of the week)
-  # If params are provided, populate from those; otherwise create blank schedules
+  # Parse schedules from form params using parser service
   #
-  # @param params [Hash] Params hash with schedules data
-  # @return [Array<WorkSchedule>] Array of 7 schedules
-  def build_schedules(params)
-    DAYS_OF_WEEK.map do |day_name, day_number|
-      day_params = params.dig(:schedules, day_number.to_s) || {}
-
-      WorkSchedule.new(
-        office: office,
-        provider: provider,
-        day_of_week: day_number,
-        is_active: day_params[:is_open] == "1",
-        **parse_day_params(day_params)
-      )
-    end
+  # @param params [Hash] Form params
+  # @return [Array<WorkSchedule>] Parsed schedule objects
+  def parse_schedules_from_params(params)
+    parser.parse
   end
 
-  # Parse params for a single day into WorkSchedule attributes
+  # Build blank schedules using parser service with empty params
+  # This creates new unsaved records for form display
   #
-  # @param params [Hash] Params for one day
-  # @return [Hash] Attributes hash for WorkSchedule.new
-  def parse_day_params(params)
-    return default_schedule_params if params.blank?
-
-    work_periods_array = parse_work_periods(params[:work_periods])
-
-    {
-      work_periods: work_periods_array,
-      appointment_duration_minutes: parse_time_to_minutes(params[:appointment_duration_minutes]) || DEFAULT_APPOINTMENT_TIME,
-      buffer_minutes_between_appointments: parse_time_to_minutes(params[:buffer_minutes_between_appointments]) || DEFAULT_BUFFER_TIME,
-      # Set opening/closing times for backward compatibility
-      opening_time: work_periods_array.first&.dig("start") || DEFAULT_START_TIME,
-      closing_time: work_periods_array.last&.dig("end") || DEFAULT_END_TIME
-    }
+  # @return [Array<WorkSchedule>] Blank schedule objects
+  def build_blank_schedules
+    SchedulesFormDataParser.new(params: {}, office: office, provider: provider).parse
   end
 
-  # Convert work_periods params from nested hash to array format
-  # Input: { "0" => { start: "09:00", end: "12:00" }, "1" => { start: "13:00", end: "17:00" } }
-  # Output: [{ "start" => "09:00", "end" => "12:00" }, { "start" => "13:00", "end" => "17:00" }]
+  # Load existing schedules from database
   #
-  # @param periods_params [Hash, nil] Work periods from form params
-  # @return [Array<Hash>] Array of period hashes
-  def parse_work_periods(periods_params)
-    return [ { "start" => DEFAULT_START_TIME, "end" => DEFAULT_END_TIME } ] if periods_params.blank?
-
-    # periods_params comes as a hash with string keys "0", "1", etc.
-    # We need to convert to array and stringify the inner hash keys
-    periods_params.values.map do |period|
-      {
-        "start" => period[:start] || period["start"],
-        "end" => period[:end] || period["end"]
-      }
-    end
+  # @param office [Office] The office
+  # @param provider [User] The provider
+  # @return [Array<WorkSchedule>] Loaded schedule objects
+  def self.load_schedules(office, provider)
+    SchedulesLoader.new(office: office, provider: provider).load
   end
 
-  # Default schedule params for blank schedules
-  #
-  # @return [Hash] Default attributes
-  def default_schedule_params
-    {
-      work_periods: [ { "start" => DEFAULT_START_TIME, "end" => DEFAULT_END_TIME } ],
-      appointment_duration_minutes: DEFAULT_APPOINTMENT_TIME,
-      buffer_minutes_between_appointments: DEFAULT_BUFFER_TIME,
-      opening_time: DEFAULT_START_TIME,
-      closing_time: DEFAULT_END_TIME
-    }
-  end
-
-  # Load existing schedules from database for editing
-  # If a day doesn't have a schedule, create a blank inactive one
-  #
-  # @return [void]
-  def load_existing_schedules
-    @schedules = DAYS_OF_WEEK.map do |day_name, day_number|
-      existing = office.work_schedules
-                      .active
-                      .for_provider(provider.id)
-                      .for_day(day_number)
-                      .first
-
-      if existing
-        existing
-      else
-        # Create blank schedule for days without existing schedule
-        WorkSchedule.new(
-          office: office,
-          provider: provider,
-          day_of_week: day_number,
-          is_active: false,
-          **default_schedule_params
-        )
-      end
-    end
-  end
-
-  # Update schedules with new params (for edit flow)
+  # Update schedules with new params from form
   #
   # @param params [Hash] New params from form
   # @return [void]
   def update_schedules_from_params(params)
-    schedules.each do |schedule|
-      day_params = params.dig(:schedules, schedule.day_of_week.to_s) || {}
+    parser = SchedulesFormDataParser.new(params: params, office: office, provider: provider)
+    updated_schedules = parser.parse
 
+    # Update existing schedule objects with new attributes
+    schedules.each_with_index do |schedule, index|
+      updated_schedule = updated_schedules[index]
       schedule.assign_attributes(
-        is_active: day_params[:is_open] == "1",
-        **parse_day_params(day_params)
+        is_active: updated_schedule.is_active,
+        work_periods: updated_schedule.work_periods,
+        appointment_duration_minutes: updated_schedule.appointment_duration_minutes,
+        buffer_minutes_between_appointments: updated_schedule.buffer_minutes_between_appointments,
+        opening_time: updated_schedule.opening_time,
+        closing_time: updated_schedule.closing_time
       )
     end
   end
 
-  # Check if a schedule should be saved (is marked as open)
-  # Need to handle both the is_active attribute and a potential is_open virtual attribute
+  # Get parser service instance
   #
-  # @param schedule [WorkSchedule] The schedule to check
-  # @return [Boolean] true if schedule is open/active
-  def schedule_is_open?(schedule)
-    schedule.is_active == true
+  # @return [SchedulesFormDataParser] Parser service
+  def parser
+    @parser ||= SchedulesFormDataParser.new(
+      params: @original_params || {},
+      office: office,
+      provider: provider
+    )
   end
 
-  # Note: parse_time_to_minutes is now provided by TimeParsing concern
+  # Get persistence service instance
+  #
+  # @return [SchedulesPersistenceService] Persistence service
+  def persistence_service
+    @persistence_service ||= SchedulesPersistenceService.new(
+      schedules: schedules,
+      provider: provider,
+      office: office
+    )
+  end
 end
