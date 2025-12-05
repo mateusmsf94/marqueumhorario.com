@@ -45,7 +45,6 @@ class WorkPeriodValidator < ActiveModel::Validator
     start2 = time_in_minutes(p2["start"])
     end2 = time_in_minutes(p2["end"])
 
-    # Overlap exists if one period starts before the other one ends
-    start1 < end2 && start2 < end1
+    IntervalOverlap.overlaps?(start1, end1, start2, end2)
   end
 end

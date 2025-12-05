@@ -44,8 +44,7 @@ class OverlapChecker
     apt_start = appointment.scheduled_at
     apt_end = calculate_appointment_end(appointment, apt_start)
 
-    # Standard interval overlap check: (StartA < EndB) and (EndA > StartB)
-    (apt_start < end_time) && (apt_end > start_time)
+    IntervalOverlap.overlaps?(apt_start, apt_end, start_time, end_time)
   end
 
   # Calculate when an appointment ends

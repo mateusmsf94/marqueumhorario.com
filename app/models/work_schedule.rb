@@ -67,7 +67,8 @@ class WorkSchedule < ApplicationRecord
 
   # Calculate total work minutes from all periods
   def total_work_minutes
-    return legacy_total_work_minutes if work_periods.blank?
+    return 0 unless opening_time && closing_time
+    return 0 if work_periods.blank?
 
     work_periods.sum do |period|
       start_minutes = parse_time_to_minutes(period["start"])
@@ -106,15 +107,6 @@ class WorkSchedule < ApplicationRecord
   end
 
   private
-
-  # Legacy calculation for backward compatibility
-  def legacy_total_work_minutes
-    return 0 unless opening_time && closing_time
-
-    closing_minutes = closing_time.hour * 60 + closing_time.min
-    opening_minutes = opening_time.hour * 60 + opening_time.min
-    closing_minutes - opening_minutes
-  end
 
   def work_day_must_accommodate_at_least_one_slot
     return unless opening_time && closing_time && appointment_duration_minutes

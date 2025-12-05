@@ -4,7 +4,7 @@ TimePeriod = Data.define(:start_time, :end_time) do
   end
 
   def overlaps?(other)
-    start_time < other.end_time && other.start_time < end_time
+    IntervalOverlap.overlaps?(start_time, end_time, other.start_time, other.end_time)
   end
 
   def contains?(time)
