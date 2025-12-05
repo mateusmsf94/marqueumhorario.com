@@ -5,17 +5,16 @@
 class PeriodSubtractorService
   # Subtract a time range from a list of periods
   # @param periods [Array<TimePeriod>] current available periods
-  # @param range_start [Time] start of time to subtract
-  # @param range_end [Time] end of time to subtract
+  # @param time_range [TimePeriod] time range to subtract
   # @return [Array<TimePeriod>] periods after subtraction
-  def self.call(periods, range_start, range_end)
-    new(periods, range_start, range_end).call
+  def self.call(periods, time_range)
+    new(periods, time_range).call
   end
 
-  def initialize(periods, range_start, range_end)
+  def initialize(periods, time_range)
     @periods = periods
-    @range_start = range_start
-    @range_end = range_end
+    @range_start = time_range.start_time
+    @range_end = time_range.end_time
   end
 
   def call

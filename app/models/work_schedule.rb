@@ -65,6 +65,18 @@ class WorkSchedule < ApplicationRecord
     end
   end
 
+  # Get slot configuration for a specific date
+  # Encapsulates duration, buffer, and periods together
+  # @param date [Date] the date to get configuration for
+  # @return [SlotConfiguration] configuration object with duration, buffer, and periods
+  def slot_configuration_for_date(date)
+    SlotConfiguration.new(
+      duration: appointment_duration_minutes.minutes,
+      buffer: buffer_minutes_between_appointments.minutes,
+      periods: periods_for_date(date)
+    )
+  end
+
   # Calculate total work minutes from all periods
   def total_work_minutes
     return 0 unless opening_time && closing_time

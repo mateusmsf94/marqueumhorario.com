@@ -278,4 +278,35 @@ class AppointmentTest < ActiveSupport::TestCase
 
     assert_equal Appointment::DEFAULT_DURATION_MINUTES, appointment.duration_minutes
   end
+
+  # Time calculation methods
+  test "start_time should return scheduled_at" do
+    appointment = appointments(:pending_appointment)
+    assert_equal appointment.scheduled_at, appointment.start_time
+  end
+
+  test "end_time should calculate based on duration_minutes" do
+    appointment = appointments(:pending_appointment)
+    appointment.duration_minutes = 60
+    expected_end_time = appointment.scheduled_at + 60.minutes
+    assert_equal expected_end_time, appointment.end_time
+  end
+
+  test "time_range should return TimePeriod value object" do
+    appointment = appointments(:pending_appointment)
+    time_range = appointment.time_range
+
+    assert_instance_of TimePeriod, time_range
+    assert_equal appointment.start_time, time_range.start_time
+    assert_equal appointment.end_time, time_range.end_time
+  end
+
+  test "time_range should reflect changes in duration_minutes" do
+    appointment = appointments(:pending_appointment)
+    appointment.duration_minutes = 45
+    time_range = appointment.time_range
+
+    expected_duration = 45.minutes
+    assert_equal expected_duration, time_range.duration
+  end
 end

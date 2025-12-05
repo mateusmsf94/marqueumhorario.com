@@ -49,6 +49,12 @@ class Appointment < ApplicationRecord
     scheduled_at + duration_minutes.minutes
   end
 
+  # Return time range as TimePeriod value object
+  # @return [TimePeriod] the appointment's time range
+  def time_range
+    TimePeriod.new(start_time: start_time, end_time: end_time)
+  end
+
   private
 
   def scheduled_at_cannot_be_in_the_past

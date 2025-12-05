@@ -241,4 +241,53 @@ class WorkScheduleTest < ActiveSupport::TestCase
     assert west_coast_schedules.all? { |sched| sched.office_id == offices(:west_coast_office).id }
     assert main_office_schedules.count > 0, "Should have schedules for main office"
   end
+
+  # Slot configuration
+  test "slot_configuration_for_date should return SlotConfiguration value object" do
+    schedule = work_schedules(:monday_schedule)
+    date = Date.today
+    config = schedule.slot_configuration_for_date(date)
+
+    assert_instance_of SlotConfiguration, config
+    assert_equal schedule.appointment_duration_minutes.minutes, config.duration
+    assert_equal schedule.buffer_minutes_between_appointments.minutes, config.buffer
+    assert_instance_of Array, config.periods
+  end
+
+  test "slot_configuration_for_date should include periods for date" do
+    schedule = work_schedules(:monday_schedule)
+    date = Date.today
+    config = schedule.slot_configuration_for_date(date)
+
+    assert_equal schedule.periods_for_date(date).size, config.periods.size
+    config.periods.each do |period|
+      assert_instance_of TimePeriod, period
+    end
+  end
+
+  test "slot_configuration_for_date should handle empty work_periods" do
+    schedule = WorkSchedule.create!(
+      valid_attributes.merge(
+        work_periods: [],
+        day_of_week: 6,  # Use Saturday
+        provider_id: users(:provider_jane).id,  # Different provider to avoid conflicts
+        is_active: true
+      )
+    )
+    date = Date.today
+    config = schedule.slot_configuration_for_date(date)
+
+    assert_instance_of SlotConfiguration, config
+    assert_empty config.periods
+  end
+
+  test "slot_configuration_for_date total_slot_duration should match duration plus buffer" do
+    schedule = work_schedules(:monday_schedule)
+    date = Date.today
+    config = schedule.slot_configuration_for_date(date)
+
+    expected_total = schedule.appointment_duration_minutes.minutes + 
+                     schedule.buffer_minutes_between_appointments.minutes
+    assert_equal expected_total, config.total_slot_duration
+  end
 end

@@ -5,10 +5,9 @@ require "test_helper"
 class PeriodSubtractorServiceTest < ActiveSupport::TestCase
   test "case 1: no overlap - keeps entire period when range ends before period starts" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("08:00")
-    range_end = Time.zone.parse("09:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("08:00"), end_time: Time.zone.parse("09:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first
@@ -16,10 +15,9 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
 
   test "case 1: no overlap - keeps entire period when range starts after period ends" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("13:00")
-    range_end = Time.zone.parse("14:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("13:00"), end_time: Time.zone.parse("14:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first
@@ -27,30 +25,27 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
 
   test "case 2: complete overlap - removes period when range completely covers it" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("09:00")
-    range_end = Time.zone.parse("13:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("09:00"), end_time: Time.zone.parse("13:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 0, result.size
   end
 
   test "case 2: complete overlap - removes period when range exactly matches it" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("10:00")
-    range_end = Time.zone.parse("12:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 0, result.size
   end
 
   test "case 3: overlaps start - keeps end portion when range overlaps beginning" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("09:00")
-    range_end = Time.zone.parse("11:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("09:00"), end_time: Time.zone.parse("11:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 1, result.size
     assert_equal Time.zone.parse("11:00"), result.first.start_time
@@ -59,10 +54,9 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
 
   test "case 4: overlaps end - keeps start portion when range overlaps ending" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("11:00")
-    range_end = Time.zone.parse("13:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("11:00"), end_time: Time.zone.parse("13:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 1, result.size
     assert_equal Time.zone.parse("10:00"), result.first.start_time
@@ -71,10 +65,9 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
 
   test "case 5: splits period - creates two periods when range is in the middle" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("14:00"))
-    range_start = Time.zone.parse("11:00")
-    range_end = Time.zone.parse("12:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("11:00"), end_time: Time.zone.parse("12:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 2, result.size
     assert_equal Time.zone.parse("10:00"), result[0].start_time
@@ -89,10 +82,9 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
       TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00")), # complete overlap
       TimePeriod.new(start_time: Time.zone.parse("13:00"), end_time: Time.zone.parse("15:00"))  # partial overlap (end)
     ]
-    range_start = Time.zone.parse("10:00")
-    range_end = Time.zone.parse("14:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("14:00"))
 
-    result = PeriodSubtractorService.call(periods, range_start, range_end)
+    result = PeriodSubtractorService.call(periods, time_range)
 
     assert_equal 2, result.size
     # First period unchanged (no overlap)
@@ -104,7 +96,8 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
   end
 
   test "handles empty periods array" do
-    result = PeriodSubtractorService.call([], Time.zone.parse("10:00"), Time.zone.parse("12:00"))
+    time_range = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
+    result = PeriodSubtractorService.call([], time_range)
 
     assert_equal 0, result.size
   end
@@ -115,11 +108,13 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     ]
 
     # First subtraction: 11:00-12:00
-    result = PeriodSubtractorService.call(periods, Time.zone.parse("11:00"), Time.zone.parse("12:00"))
+    time_range1 = TimePeriod.new(start_time: Time.zone.parse("11:00"), end_time: Time.zone.parse("12:00"))
+    result = PeriodSubtractorService.call(periods, time_range1)
     assert_equal 2, result.size
 
     # Second subtraction: 14:00-15:00
-    result = PeriodSubtractorService.call(result, Time.zone.parse("14:00"), Time.zone.parse("15:00"))
+    time_range2 = TimePeriod.new(start_time: Time.zone.parse("14:00"), end_time: Time.zone.parse("15:00"))
+    result = PeriodSubtractorService.call(result, time_range2)
     assert_equal 3, result.size
 
     # Verify final periods
@@ -133,10 +128,9 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
 
   test "handles edge case where range_end equals period start_time (boundary)" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("08:00")
-    range_end = Time.zone.parse("10:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("08:00"), end_time: Time.zone.parse("10:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first
@@ -144,10 +138,9 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
 
   test "handles edge case where range_start equals period end_time (boundary)" do
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
-    range_start = Time.zone.parse("12:00")
-    range_end = Time.zone.parse("14:00")
+    time_range = TimePeriod.new(start_time: Time.zone.parse("12:00"), end_time: Time.zone.parse("14:00"))
 
-    result = PeriodSubtractorService.call([period], range_start, range_end)
+    result = PeriodSubtractorService.call([period], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first

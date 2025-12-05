@@ -37,23 +37,23 @@ class SlotGenerator
 
   def generate_slots_for_day(date, work_schedule)
     slots = []
-    # Use this day's specific duration and buffer
-    duration = work_schedule.appointment_duration_minutes.minutes
-    total_slot_duration = duration + work_schedule.buffer_minutes_between_appointments.minutes
+    config = work_schedule.slot_configuration_for_date(date)
 
-    # Use work_periods to respect lunch breaks and split shifts
-    periods = work_schedule.periods_for_date(date)
-
-    periods.each do |period|
+    config.periods.each do |period|
       period_start = period.start_time
       period_end = period.end_time
       slot_start_time = period_start
 
       # Generate slots only within this work period
-      while slot_start_time + duration <= period_end
-        slot_end_time = slot_start_time + duration
+      while slot_start_time + config.duration <= period_end
+        slot_end_time = slot_start_time + config.duration
 
-        status = check_availability(slot_start_time, slot_end_time, work_schedule.buffer_minutes_between_appointments, duration)
+        status = check_availability(
+          slot_start_time,
+          slot_end_time,
+          config.buffer,
+          config.duration
+        )
 
         slots << AvailableSlot.new(
           start_time: slot_start_time,
@@ -62,16 +62,16 @@ class SlotGenerator
           office_id: @office_id
         )
 
-        slot_start_time += total_slot_duration
+        slot_start_time += config.total_slot_duration
       end
     end
 
     slots
   end
 
-  def check_availability(start_time, end_time, buffer_minutes, duration)
+  def check_availability(start_time, end_time, buffer, duration)
     checker = OverlapChecker.new(@appointments, duration: duration)
-    effective_end_time = end_time + buffer_minutes.minutes
+    effective_end_time = end_time + buffer
     is_busy = checker.any_overlap?(start_time, effective_end_time)
     is_busy ? SlotStatus::BUSY : SlotStatus::AVAILABLE
   end

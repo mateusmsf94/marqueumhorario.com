@@ -107,11 +107,7 @@ class AvailabilityService
 
     # For each appointment, subtract its time from available periods
     appointments.each do |appointment|
-      available = PeriodSubtractorService.call(
-        available,
-        appointment.start_time,
-        appointment.end_time
-      )
+      available = PeriodSubtractorService.call(available, appointment.time_range)
     end
 
     available
