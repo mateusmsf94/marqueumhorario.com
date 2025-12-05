@@ -140,8 +140,8 @@ class WorkScheduleCollection
       schedule.assign_attributes(
         is_active: updated_schedule.is_active,
         work_periods: updated_schedule.work_periods,
-        appointment_duration_minutes: updated_schedule.appointment_duration_minutes,
-        buffer_minutes_between_appointments: updated_schedule.buffer_minutes_between_appointments,
+        slot_duration_minutes: updated_schedule.slot_duration_minutes,
+        slot_buffer_minutes: updated_schedule.slot_buffer_minutes,
         opening_time: updated_schedule.opening_time,
         closing_time: updated_schedule.closing_time
       )

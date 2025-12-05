@@ -15,11 +15,11 @@ class WorkSchedule < ApplicationRecord
   validates :opening_time, presence: true
   validates :closing_time, presence: true
 
-  validates :appointment_duration_minutes, presence: true,
-                                           numericality: { only_integer: true, greater_than: 0 }
+  validates :slot_duration_minutes, presence: true,
+                                    numericality: { only_integer: true, greater_than: 0 }
 
-  validates :buffer_minutes_between_appointments, presence: true,
-                                                   numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :slot_buffer_minutes, presence: true,
+                                  numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   # Custom validations
   validates_with TimeRangeValidator, start: :opening_time, end: :closing_time
@@ -71,8 +71,8 @@ class WorkSchedule < ApplicationRecord
   # @return [SlotConfiguration] configuration object with duration, buffer, and periods
   def slot_configuration_for_date(date)
     SlotConfiguration.new(
-      duration: appointment_duration_minutes.minutes,
-      buffer: buffer_minutes_between_appointments.minutes,
+      duration: slot_duration_minutes.minutes,
+      buffer: slot_buffer_minutes.minutes,
       periods: periods_for_date(date)
     )
   end
@@ -83,8 +83,8 @@ class WorkSchedule < ApplicationRecord
     return 0 if work_periods.blank?
 
     work_periods.sum do |period|
-      start_minutes = parse_time_to_minutes(period["start"])
-      end_minutes = parse_time_to_minutes(period["end"])
+      start_minutes = TimeParsing.parse_time_to_minutes(period["start"])
+      end_minutes = TimeParsing.parse_time_to_minutes(period["end"])
 
       end_minutes - start_minutes
     end
@@ -105,9 +105,9 @@ class WorkSchedule < ApplicationRecord
   end
 
   def max_appointments_per_day
-    return 0 if total_work_minutes.zero? || appointment_duration_minutes.zero?
+    return 0 if total_work_minutes.zero? || slot_duration_minutes.zero?
 
-    (total_work_minutes / (appointment_duration_minutes + buffer_minutes_between_appointments)).floor
+    (total_work_minutes / (slot_duration_minutes + slot_buffer_minutes)).floor
   end
 
   def activate!
@@ -121,21 +121,21 @@ class WorkSchedule < ApplicationRecord
   private
 
   def work_day_must_accommodate_at_least_one_slot
-    return unless opening_time && closing_time && appointment_duration_minutes
+    return unless opening_time && closing_time && slot_duration_minutes
 
     # Convert times to minutes for comparison
     opening_minutes = opening_time.hour * 60 + opening_time.min
     closing_minutes = closing_time.hour * 60 + closing_time.min
     available_minutes = closing_minutes - opening_minutes
 
-    if available_minutes < appointment_duration_minutes
-      errors.add(:appointment_duration_minutes,
+    if available_minutes < slot_duration_minutes
+      errors.add(:slot_duration_minutes,
                  "is too long for the available work hours (#{available_minutes} minutes available)")
     end
   end
 
   def time_string_to_datetime(time_str, date)
-    parsed = parse_time_string(time_str)
+    parsed = TimeParsing.parse_time_string(time_str)
     return nil unless parsed
 
     date.to_datetime.change(hour: parsed[:hour], min: parsed[:minute], sec: 0)

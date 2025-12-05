@@ -109,8 +109,8 @@ class Providers::WorkSchedulesController < ApplicationController
     params.permit(
       schedules: [
         :is_open,
-        :appointment_duration_minutes,
-        :buffer_minutes_between_appointments,
+        :slot_duration_minutes,
+        :slot_buffer_minutes,
         work_periods: [ :start, :end ]
       ]
     )

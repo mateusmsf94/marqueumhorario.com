@@ -74,7 +74,7 @@ class Appointment < ApplicationRecord
       .first
 
     if work_schedule
-      total_minutes = work_schedule.appointment_duration_minutes + work_schedule.buffer_minutes_between_appointments
+      total_minutes = work_schedule.slot_duration_minutes + work_schedule.slot_buffer_minutes
       self.duration_minutes = total_minutes
     else
       self.duration_minutes = DEFAULT_DURATION_MINUTES

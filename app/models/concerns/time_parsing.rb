@@ -5,11 +5,8 @@
 # Shared module for parsing time strings into minutes since midnight.
 # Provides consistent time parsing across models and validators.
 #
-# Usage in models:
-#   include TimeParsing
-#   minutes = parse_time_to_minutes("09:30")  # => 570
-#
-# Usage in validators (class method):
+# Usage (class method - preferred):
+#   TimeParsing.parse_time_to_minutes("09:30")  # => 570
 #   TimeParsing.parse_time_to_minutes("14:00")  # => 840
 #
 module TimeParsing
@@ -44,11 +41,6 @@ module TimeParsing
   #   parse_time_to_minutes("12:60")   # => nil (invalid minutes)
   #   parse_time_to_minutes("abc")     # => nil (invalid format)
   #
-  def parse_time_to_minutes(time_string)
-    TimeParsing.parse_time_to_minutes(time_string)
-  end
-
-  # Class method version for use in validators and non-instance contexts
   def self.parse_time_to_minutes(time_string)
     return nil if time_string.blank?
 
@@ -81,10 +73,6 @@ module TimeParsing
   #   parse_time_string("09:30")  # => { hour: 9, minute: 30 }
   #   parse_time_string("invalid") # => nil
   #
-  def parse_time_string(time_str)
-    TimeParsing.parse_time_string(time_str)
-  end
-
   def self.parse_time_string(time_str)
     return nil if time_str.blank?
 

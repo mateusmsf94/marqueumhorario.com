@@ -58,8 +58,8 @@ class SchedulesFormDataParser
 
     {
       work_periods: work_periods_array,
-      appointment_duration_minutes: parse_duration(day_params[:appointment_duration_minutes]),
-      buffer_minutes_between_appointments: parse_buffer(day_params[:buffer_minutes_between_appointments]),
+      slot_duration_minutes: parse_duration(day_params[:slot_duration_minutes]),
+      slot_buffer_minutes: parse_buffer(day_params[:slot_buffer_minutes]),
       opening_time: work_periods_array.first&.dig("start") || SchedulingDefaults::DEFAULT_WORK_START,
       closing_time: work_periods_array.last&.dig("end") || SchedulingDefaults::DEFAULT_WORK_END
     }
@@ -89,7 +89,7 @@ class SchedulesFormDataParser
   # @param value [String, Integer, nil] Duration value from params
   # @return [Integer] Duration in minutes
   def parse_duration(value)
-    parse_time_to_minutes(value) || SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION
+    TimeParsing.parse_time_to_minutes(value) || SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION
   end
 
   # Parse buffer time, applying defaults if needed
@@ -97,7 +97,7 @@ class SchedulesFormDataParser
   # @param value [String, Integer, nil] Buffer value from params
   # @return [Integer] Buffer in minutes
   def parse_buffer(value)
-    parse_time_to_minutes(value) || SchedulingDefaults::DEFAULT_BUFFER_TIME
+    TimeParsing.parse_time_to_minutes(value) || SchedulingDefaults::DEFAULT_BUFFER_TIME
   end
 
   # Default attributes for blank schedules
@@ -106,8 +106,8 @@ class SchedulesFormDataParser
   def default_attributes
     {
       work_periods: default_work_periods,
-      appointment_duration_minutes: SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION,
-      buffer_minutes_between_appointments: SchedulingDefaults::DEFAULT_BUFFER_TIME,
+      slot_duration_minutes: SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION,
+      slot_buffer_minutes: SchedulingDefaults::DEFAULT_BUFFER_TIME,
       opening_time: SchedulingDefaults::DEFAULT_WORK_START,
       closing_time: SchedulingDefaults::DEFAULT_WORK_END
     }

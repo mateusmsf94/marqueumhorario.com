@@ -80,10 +80,10 @@ class ProviderWorkSchedulesTest < ApplicationSystemTestCase
     within "[data-work-periods-day-value='1']" do
       # Set values using JavaScript since inputs are hidden and controlled by Flatpickr
       page.execute_script(
-        "document.querySelector(\"input[name='schedules[1][appointment_duration_minutes]']\").value = '01:00'"
+        "document.querySelector(\"input[name='schedules[1][slot_duration_minutes]']\").value = '01:00'"
       )
       page.execute_script(
-        "document.querySelector(\"input[name='schedules[1][buffer_minutes_between_appointments]']\").value = '00:15'"
+        "document.querySelector(\"input[name='schedules[1][slot_buffer_minutes]']\").value = '00:15'"
       )
     end
 
@@ -114,7 +114,7 @@ class ProviderWorkSchedulesTest < ApplicationSystemTestCase
       # Set invalid duration (00:00 = 0 minutes)
       # This tests server-side validation
       page.execute_script(
-        "document.querySelector(\"input[name='schedules[1][appointment_duration_minutes]']\").value = '00:00'"
+        "document.querySelector(\"input[name='schedules[1][slot_duration_minutes]']\").value = '00:00'"
       )
     end
 

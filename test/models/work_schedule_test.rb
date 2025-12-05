@@ -6,8 +6,8 @@ class WorkScheduleTest < ActiveSupport::TestCase
       day_of_week: 1,
       opening_time: "09:00",
       closing_time: "17:00",
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15,
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15,
       is_active: true,
       office_id: offices(:main_office).id,
       provider_id: users(:provider_john).id
@@ -40,16 +40,16 @@ class WorkScheduleTest < ActiveSupport::TestCase
     assert_includes work_schedule.errors[:closing_time], "can't be blank"
   end
 
-  test "should not save without appointment_duration_minutes" do
-    work_schedule = WorkSchedule.new(valid_attributes.except(:appointment_duration_minutes))
-    assert_not work_schedule.save, "Saved WorkSchedule without appointment_duration_minutes"
-    assert_includes work_schedule.errors[:appointment_duration_minutes], "can't be blank"
+  test "should not save without slot_duration_minutes" do
+    work_schedule = WorkSchedule.new(valid_attributes.except(:slot_duration_minutes))
+    assert_not work_schedule.save, "Saved WorkSchedule without slot_duration_minutes"
+    assert_includes work_schedule.errors[:slot_duration_minutes], "can't be blank"
   end
 
-  test "should not save without buffer_minutes_between_appointments" do
-    work_schedule = WorkSchedule.new(valid_attributes.except(:buffer_minutes_between_appointments))
-    assert_not work_schedule.save, "Saved WorkSchedule without buffer_minutes_between_appointments"
-    assert_includes work_schedule.errors[:buffer_minutes_between_appointments], "can't be blank"
+  test "should not save without slot_buffer_minutes" do
+    work_schedule = WorkSchedule.new(valid_attributes.except(:slot_buffer_minutes))
+    assert_not work_schedule.save, "Saved WorkSchedule without slot_buffer_minutes"
+    assert_includes work_schedule.errors[:slot_buffer_minutes], "can't be blank"
   end
 
   # Numericality validations - day_of_week
@@ -77,27 +77,27 @@ class WorkScheduleTest < ActiveSupport::TestCase
     end
   end
 
-  # Numericality validations - appointment_duration_minutes
-  test "should require positive appointment_duration_minutes" do
-    work_schedule = WorkSchedule.new(valid_attributes.merge(appointment_duration_minutes: 0))
-    assert_not work_schedule.valid?, "Saved WorkSchedule with zero appointment_duration_minutes"
-    assert_includes work_schedule.errors[:appointment_duration_minutes], "must be greater than 0"
+  # Numericality validations - slot_duration_minutes
+  test "should require positive slot_duration_minutes" do
+    work_schedule = WorkSchedule.new(valid_attributes.merge(slot_duration_minutes: 0))
+    assert_not work_schedule.valid?, "Saved WorkSchedule with zero slot_duration_minutes"
+    assert_includes work_schedule.errors[:slot_duration_minutes], "must be greater than 0"
 
-    work_schedule = WorkSchedule.new(valid_attributes.merge(appointment_duration_minutes: -10))
-    assert_not work_schedule.valid?, "Saved WorkSchedule with negative appointment_duration_minutes"
-    assert_includes work_schedule.errors[:appointment_duration_minutes], "must be greater than 0"
+    work_schedule = WorkSchedule.new(valid_attributes.merge(slot_duration_minutes: -10))
+    assert_not work_schedule.valid?, "Saved WorkSchedule with negative slot_duration_minutes"
+    assert_includes work_schedule.errors[:slot_duration_minutes], "must be greater than 0"
   end
 
-  # Numericality validations - buffer_minutes_between_appointments
-  test "should allow zero buffer_minutes_between_appointments" do
-    work_schedule = WorkSchedule.new(valid_attributes.merge(buffer_minutes_between_appointments: 0, is_active: false))
+  # Numericality validations - slot_buffer_minutes
+  test "should allow zero slot_buffer_minutes" do
+    work_schedule = WorkSchedule.new(valid_attributes.merge(slot_buffer_minutes: 0, is_active: false))
     assert work_schedule.valid?, "Should allow zero buffer minutes"
   end
 
-  test "should not allow negative buffer_minutes_between_appointments" do
-    work_schedule = WorkSchedule.new(valid_attributes.merge(buffer_minutes_between_appointments: -5))
-    assert_not work_schedule.valid?, "Saved WorkSchedule with negative buffer_minutes_between_appointments"
-    assert_includes work_schedule.errors[:buffer_minutes_between_appointments], "must be greater than or equal to 0"
+  test "should not allow negative slot_buffer_minutes" do
+    work_schedule = WorkSchedule.new(valid_attributes.merge(slot_buffer_minutes: -5))
+    assert_not work_schedule.valid?, "Saved WorkSchedule with negative slot_buffer_minutes"
+    assert_includes work_schedule.errors[:slot_buffer_minutes], "must be greater than or equal to 0"
   end
 
   # Time range validation
@@ -118,18 +118,18 @@ class WorkScheduleTest < ActiveSupport::TestCase
     work_schedule = WorkSchedule.new(valid_attributes.merge(
       opening_time: "09:00",
       closing_time: "10:00",
-      appointment_duration_minutes: 120 # 2 hours, but only 1 hour available
+      slot_duration_minutes: 120 # 2 hours, but only 1 hour available
     ))
     assert_not work_schedule.valid?, "Saved WorkSchedule with appointment_duration longer than work day"
-    assert work_schedule.errors[:appointment_duration_minutes].any? { |msg| msg.include?("is too long for the available work hours") },
-      "Expected error message about work hours, got: #{work_schedule.errors[:appointment_duration_minutes]}"
+    assert work_schedule.errors[:slot_duration_minutes].any? { |msg| msg.include?("is too long for the available work hours") },
+      "Expected error message about work hours, got: #{work_schedule.errors[:slot_duration_minutes]}"
   end
 
   test "should allow appointment_duration equal to work day length" do
     work_schedule = WorkSchedule.new(valid_attributes.merge(
       opening_time: "09:00",
       closing_time: "10:00",
-      appointment_duration_minutes: 60, # Exactly 1 hour
+      slot_duration_minutes: 60, # Exactly 1 hour
       is_active: false
     ))
     assert work_schedule.valid?, "Should allow appointment_duration equal to work day length"
@@ -208,7 +208,7 @@ class WorkScheduleTest < ActiveSupport::TestCase
     work_schedule = WorkSchedule.new(valid_attributes.merge(
       opening_time: "22:00",
       closing_time: "23:59",
-      appointment_duration_minutes: 60,
+      slot_duration_minutes: 60,
       is_active: false
     ))
     assert work_schedule.valid?, "Should handle evening work hours"
@@ -249,8 +249,8 @@ class WorkScheduleTest < ActiveSupport::TestCase
     config = schedule.slot_configuration_for_date(date)
 
     assert_instance_of SlotConfiguration, config
-    assert_equal schedule.appointment_duration_minutes.minutes, config.duration
-    assert_equal schedule.buffer_minutes_between_appointments.minutes, config.buffer
+    assert_equal schedule.slot_duration_minutes.minutes, config.duration
+    assert_equal schedule.slot_buffer_minutes.minutes, config.buffer
     assert_instance_of Array, config.periods
   end
 
@@ -286,8 +286,8 @@ class WorkScheduleTest < ActiveSupport::TestCase
     date = Date.today
     config = schedule.slot_configuration_for_date(date)
 
-    expected_total = schedule.appointment_duration_minutes.minutes + 
-                     schedule.buffer_minutes_between_appointments.minutes
+    expected_total = schedule.slot_duration_minutes.minutes + 
+                     schedule.slot_buffer_minutes.minutes
     assert_equal expected_total, config.total_slot_duration
   end
 end

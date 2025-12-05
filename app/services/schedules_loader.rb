@@ -76,8 +76,8 @@ class SchedulesLoader
           "end" => SchedulingDefaults::DEFAULT_WORK_END
         }
       ],
-      appointment_duration_minutes: SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION,
-      buffer_minutes_between_appointments: SchedulingDefaults::DEFAULT_BUFFER_TIME,
+      slot_duration_minutes: SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION,
+      slot_buffer_minutes: SchedulingDefaults::DEFAULT_BUFFER_TIME,
       opening_time: SchedulingDefaults::DEFAULT_WORK_START,
       closing_time: SchedulingDefaults::DEFAULT_WORK_END
     }

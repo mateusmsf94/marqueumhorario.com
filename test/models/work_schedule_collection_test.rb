@@ -29,8 +29,8 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
           work_periods: {
             "0" => { start: "09:00", end: "17:00" }
           },
-          appointment_duration_minutes: "60",
-          buffer_minutes_between_appointments: "15"
+          slot_duration_minutes: "60",
+          slot_buffer_minutes: "15"
         }
       }
     }
@@ -43,8 +43,8 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
 
     monday = collection.schedule_for_day(1)
     assert monday.is_active
-    assert_equal 60, monday.appointment_duration_minutes
-    assert_equal 15, monday.buffer_minutes_between_appointments
+    assert_equal 60, monday.slot_duration_minutes
+    assert_equal 15, monday.slot_buffer_minutes
     assert_equal [ { "start" => "09:00", "end" => "17:00" } ], monday.work_periods
   end
 
@@ -54,8 +54,8 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
       schedules: {
         "1" => { # Monday - open but no work periods (invalid)
           is_open: "1",
-          appointment_duration_minutes: "60",
-          buffer_minutes_between_appointments: "15"
+          slot_duration_minutes: "60",
+          slot_buffer_minutes: "15"
         },
         "2" => { # Tuesday - closed (should not be validated)
           is_open: "0"
@@ -82,16 +82,16 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
           work_periods: {
             "0" => { start: "09:00", end: "17:00" }
           },
-          appointment_duration_minutes: "60",
-          buffer_minutes_between_appointments: "15"
+          slot_duration_minutes: "60",
+          slot_buffer_minutes: "15"
         },
         "2" => { # Tuesday
           is_open: "1",
           work_periods: {
             "0" => { start: "10:00", end: "18:00" }
           },
-          appointment_duration_minutes: "45",
-          buffer_minutes_between_appointments: "10"
+          slot_duration_minutes: "45",
+          slot_buffer_minutes: "10"
         }
       }
     }
@@ -118,8 +118,8 @@ class WorkScheduleCollectionTest < ActiveSupport::TestCase
       provider: @new_provider,
       day_of_week: 1,
       work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15,
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15,
       opening_time: "09:00",
       closing_time: "17:00",
       is_active: true

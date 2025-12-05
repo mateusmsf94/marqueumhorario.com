@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_04_143205) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_05_215708) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -110,8 +110,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_04_143205) do
   end
 
   create_table "work_schedules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.integer "appointment_duration_minutes"
-    t.integer "buffer_minutes_between_appointments"
     t.time "closing_time"
     t.datetime "created_at", null: false
     t.integer "day_of_week"
@@ -119,6 +117,8 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_04_143205) do
     t.uuid "office_id", null: false
     t.time "opening_time"
     t.uuid "provider_id"
+    t.integer "slot_buffer_minutes"
+    t.integer "slot_duration_minutes"
     t.datetime "updated_at", null: false
     t.jsonb "work_periods", default: []
     t.index ["office_id", "day_of_week", "is_active"], name: "index_work_schedules_on_office_day_active"

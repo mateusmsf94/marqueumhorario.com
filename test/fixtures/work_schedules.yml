@@ -6,8 +6,8 @@ sunday_schedule:
   day_of_week: 0
   opening_time: "10:00:00"
   closing_time: "14:00:00"
-  appointment_duration_minutes: 30
-  buffer_minutes_between_appointments: 10
+  slot_duration_minutes: 30
+  slot_buffer_minutes: 10
   is_active: true
   office: main_office
   provider: provider_john
@@ -18,8 +18,8 @@ monday_schedule:
   day_of_week: 1
   opening_time: "09:00:00"
   closing_time: "17:00:00"
-  appointment_duration_minutes: 60
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 60
+  slot_buffer_minutes: 15
   is_active: true
   office: main_office
   provider: provider_john
@@ -30,8 +30,8 @@ tuesday_schedule:
   day_of_week: 2
   opening_time: "09:00:00"
   closing_time: "17:00:00"
-  appointment_duration_minutes: 60
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 60
+  slot_buffer_minutes: 15
   is_active: true
   office: main_office
   provider: provider_john
@@ -42,8 +42,8 @@ wednesday_schedule:
   day_of_week: 3
   opening_time: "09:00:00"
   closing_time: "17:00:00"
-  appointment_duration_minutes: 60
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 60
+  slot_buffer_minutes: 15
   is_active: true
   office: main_office
   provider: provider_john
@@ -54,8 +54,8 @@ thursday_schedule:
   day_of_week: 4
   opening_time: "09:00:00"
   closing_time: "17:00:00"
-  appointment_duration_minutes: 60
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 60
+  slot_buffer_minutes: 15
   is_active: true
   office: main_office
   provider: provider_john
@@ -66,8 +66,8 @@ friday_schedule:
   day_of_week: 5
   opening_time: "09:00:00"
   closing_time: "17:00:00"
-  appointment_duration_minutes: 60
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 60
+  slot_buffer_minutes: 15
   is_active: true
   office: main_office
   provider: provider_john
@@ -78,8 +78,8 @@ saturday_schedule:
   day_of_week: 6
   opening_time: "09:00:00"
   closing_time: "13:00:00"
-  appointment_duration_minutes: 45
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 45
+  slot_buffer_minutes: 15
   is_active: true
   office: main_office
   provider: provider_john
@@ -90,8 +90,8 @@ inactive_monday_schedule:
   day_of_week: 1
   opening_time: "08:00:00"
   closing_time: "16:00:00"
-  appointment_duration_minutes: 30
-  buffer_minutes_between_appointments: 10
+  slot_duration_minutes: 30
+  slot_buffer_minutes: 10
   is_active: false
   office: main_office
   provider: provider_john
@@ -102,8 +102,8 @@ jane_tuesday_schedule:
   day_of_week: 2
   opening_time: "13:00:00"
   closing_time: "19:00:00"
-  appointment_duration_minutes: 30
-  buffer_minutes_between_appointments: 5
+  slot_duration_minutes: 30
+  slot_buffer_minutes: 5
   is_active: true
   office: main_office
   provider: provider_jane
@@ -113,8 +113,8 @@ jane_thursday_schedule:
   day_of_week: 4
   opening_time: "13:00:00"
   closing_time: "19:00:00"
-  appointment_duration_minutes: 30
-  buffer_minutes_between_appointments: 5
+  slot_duration_minutes: 30
+  slot_buffer_minutes: 5
   is_active: true
   office: main_office
   provider: provider_jane
@@ -125,8 +125,8 @@ west_coast_monday_schedule:
   day_of_week: 1
   opening_time: "08:00:00"
   closing_time: "16:00:00"
-  appointment_duration_minutes: 60
-  buffer_minutes_between_appointments: 15
+  slot_duration_minutes: 60
+  slot_buffer_minutes: 15
   is_active: true
   office: west_coast_office
   provider: provider_john

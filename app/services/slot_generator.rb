@@ -26,7 +26,7 @@ class SlotGenerator
     (start_date.to_date..end_date.to_date).each do |date|
       work_schedule = office_schedules.find { |ws| ws.day_of_week == date.wday }
       next unless work_schedule
-      next unless work_schedule.appointment_duration_minutes.present?
+      next unless work_schedule.slot_duration_minutes.present?
 
       slots.concat(generate_slots_for_day(date, work_schedule))
     end

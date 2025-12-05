@@ -24,8 +24,8 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       ],
       opening_time: "09:00",
       closing_time: "17:00",
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15
     )
   end
 
@@ -297,8 +297,8 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       work_periods: [{ "start" => "10:00", "end" => "16:00" }],
       opening_time: "10:00",
       closing_time: "16:00",
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15
     )
 
     calculator = WeeklyAvailabilityCalculator.new(
@@ -327,8 +327,8 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       work_periods: [{ "start" => "09:00", "end" => "17:00" }],
       opening_time: "09:00",
       closing_time: "17:00",
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15
     )
 
     calculator = WeeklyAvailabilityCalculator.new(
@@ -366,8 +366,8 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       work_periods: [{ "start" => "09:00", "end" => "17:00" }],
       opening_time: "09:00",
       closing_time: "17:00",
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15
     )
 
     calculator = WeeklyAvailabilityCalculator.new(

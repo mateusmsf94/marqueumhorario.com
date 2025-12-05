@@ -87,15 +87,15 @@
       >
         <%# Appointment Duration %>
         <div>
-          <%= label_tag "schedules[#{day_number}][appointment_duration_minutes]",
+          <%= label_tag "schedules[#{day_number}][slot_duration_minutes]",
           "Appointment Duration",
           class: "block text-sm font-medium text-gray-700 mb-1" %>
           <div>
-            <%= text_field_tag "schedules[#{day_number}][appointment_duration_minutes]",
-            format_minutes_as_time(schedule.appointment_duration_minutes || 50),
+            <%= text_field_tag "schedules[#{day_number}][slot_duration_minutes]",
+            format_minutes_as_time(schedule.slot_duration_minutes || 50),
             data: {
               controller: "time-picker",
-              time_picker_default_value: format_minutes_as_time(schedule.appointment_duration_minutes || 50),
+              time_picker_default_value: format_minutes_as_time(schedule.slot_duration_minutes || 50),
             },
             placeholder: "HH:MM",
             class: "hidden" %>
@@ -105,15 +105,15 @@
 
         <%# Buffer Time %>
         <div>
-          <%= label_tag "schedules[#{day_number}][buffer_minutes_between_appointments]",
+          <%= label_tag "schedules[#{day_number}][slot_buffer_minutes]",
           "Buffer Time",
           class: "block text-sm font-medium text-gray-700 mb-1" %>
           <div>
-            <%= text_field_tag "schedules[#{day_number}][buffer_minutes_between_appointments]",
-            format_minutes_as_time(schedule.buffer_minutes_between_appointments || 10),
+            <%= text_field_tag "schedules[#{day_number}][slot_buffer_minutes]",
+            format_minutes_as_time(schedule.slot_buffer_minutes || 10),
             data: {
               controller: "time-picker",
-              time_picker_default_value: format_minutes_as_time(schedule.buffer_minutes_between_appointments || 10),
+              time_picker_default_value: format_minutes_as_time(schedule.slot_buffer_minutes || 10),
             },
             placeholder: "HH:MM",
             class: "hidden" %>

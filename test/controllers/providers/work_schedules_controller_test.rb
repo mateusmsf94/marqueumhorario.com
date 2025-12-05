@@ -39,8 +39,8 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
           work_periods: {
             "0" => { start: "09:00", end: "17:00" }
           },
-          appointment_duration_minutes: "60",
-          buffer_minutes_between_appointments: "15"
+          slot_duration_minutes: "60",
+          slot_buffer_minutes: "15"
         },
         "2" => { # Tuesday - closed
           is_open: "0"
@@ -59,10 +59,10 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
   test "should render new with errors on validation failure" do
     params = {
       schedules: {
-        "1" => { # Monday - invalid (appointment_duration_minutes is 0)
+        "1" => { # Monday - invalid (slot_duration_minutes is 0)
           is_open: "1",
-          appointment_duration_minutes: "0", # Invalid duration
-          buffer_minutes_between_appointments: "15"
+          slot_duration_minutes: "0", # Invalid duration
+          slot_buffer_minutes: "15"
         }
       }
     }
@@ -82,8 +82,8 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
       provider: @new_provider,
       day_of_week: 1,
       work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15,
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15,
       opening_time: "09:00",
       closing_time: "17:00",
       is_active: true
@@ -101,8 +101,8 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
       provider: @new_provider,
       day_of_week: 1,
       work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
-      appointment_duration_minutes: 60,
-      buffer_minutes_between_appointments: 15,
+      slot_duration_minutes: 60,
+      slot_buffer_minutes: 15,
       opening_time: "09:00",
       closing_time: "17:00",
       is_active: true
@@ -115,8 +115,8 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
           work_periods: {
             "0" => { start: "09:00", end: "17:00" }
           },
-          appointment_duration_minutes: "45", # Changed from 60
-          buffer_minutes_between_appointments: "15"
+          slot_duration_minutes: "45", # Changed from 60
+          slot_buffer_minutes: "15"
         }
       }
     }
@@ -125,6 +125,6 @@ class Providers::WorkSchedulesControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to providers_office_work_schedules_path(@new_office)
     schedule.reload
-    assert_equal 45, schedule.appointment_duration_minutes
+    assert_equal 45, schedule.slot_duration_minutes
   end
 end
