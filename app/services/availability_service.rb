@@ -107,7 +107,7 @@ class AvailabilityService
 
     # For each appointment, subtract its time from available periods
     appointments.each do |appointment|
-      available = subtract_time_range(
+      available = PeriodSubtractorService.call(
         available,
         appointment.start_time,
         appointment.end_time
@@ -115,52 +115,5 @@ class AvailabilityService
     end
 
     available
-  end
-
-  # Subtract a time range from a list of periods
-  # This is the core algorithm that handles period splitting
-  # @param periods [Array<TimePeriod>] current available periods
-  # @param range_start [Time] start of time to subtract
-  # @param range_end [Time] end of time to subtract
-  # @return [Array<TimePeriod>] periods after subtraction
-  def subtract_time_range(periods, range_start, range_end)
-    result = []
-
-    periods.each do |period|
-      period_start = period.start_time
-      period_end = period.end_time
-
-      # Case 1: No overlap - keep the entire period
-      if range_end <= period_start || range_start >= period_end
-        result << period
-        next
-      end
-
-      # Case 2: Appointment completely covers period - skip it
-      if range_start <= period_start && range_end >= period_end
-        next
-      end
-
-      # Case 3: Appointment overlaps start - keep the end portion
-      if range_start <= period_start && range_end < period_end
-        result << TimePeriod.new(start_time: range_end, end_time: period_end)
-        next
-      end
-
-      # Case 4: Appointment overlaps end - keep the start portion
-      if range_start > period_start && range_end >= period_end
-        result << TimePeriod.new(start_time: period_start, end_time: range_start)
-        next
-      end
-
-      # Case 5: Appointment is in the middle - split into two periods
-      if range_start > period_start && range_end < period_end
-        result << TimePeriod.new(start_time: period_start, end_time: range_start)
-        result << TimePeriod.new(start_time: range_end, end_time: period_end)
-        next
-      end
-    end
-
-    result
   end
 end

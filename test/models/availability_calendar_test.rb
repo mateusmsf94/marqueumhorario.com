@@ -31,6 +31,7 @@ class AvailabilityCalendarTest < ActiveSupport::TestCase
     busy_end_time = busy_start_time + work_schedule.appointment_duration_minutes.minutes
 
     # The generator creates slots with buffer; 9:00 and 10:15 slots are blocked by the 10:00 appointment
+    # Cancelled appointments do not block slots (they're filtered out)
     busy_slots = calendar.busy_periods.map { |p| Time.zone.parse(p["start_time"]).strftime("%H:%M") }.sort
     assert_equal [ "09:00", "10:15" ], busy_slots
 

@@ -21,6 +21,7 @@ class AvailabilityCalendar < ApplicationRecord
     # 1. Fetch data scoped to this office
     schedules = work_schedules || WorkSchedule.where(office_id: self.office_id, is_active: true)
     appointments = Appointment.where(office_id: self.office_id, scheduled_at: self.period_start..self.period_end)
+                              .where.not(status: :cancelled)
 
     # 2. Generate slots
     generator = SlotGenerator.new(schedules, appointments, office_id: self.office_id)
