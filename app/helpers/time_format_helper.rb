@@ -8,8 +8,7 @@ module TimeFormatHelper
   def format_time_24h(time, timezone: nil)
     return "" unless time
 
-    time_in_zone = timezone ? time.in_time_zone(timezone) : time
-    time_in_zone.strftime("%H:%M")
+    time_in_zone(time, timezone).strftime("%H:%M")
   end
 
   # Format date and time (YYYY-MM-DD HH:mm)
@@ -19,8 +18,7 @@ module TimeFormatHelper
   def format_datetime_24h(time, timezone: nil)
     return "" unless time
 
-    time_in_zone = timezone ? time.in_time_zone(timezone) : time
-    time_in_zone.strftime("%Y-%m-%d %H:%M")
+    time_in_zone(time, timezone).strftime("%Y-%m-%d %H:%M")
   end
 
   # Format full datetime with day name (Day, DD MMM YYYY HH:mm)
@@ -30,8 +28,7 @@ module TimeFormatHelper
   def format_full_datetime_24h(time, timezone: nil)
     return "" unless time
 
-    time_in_zone = timezone ? time.in_time_zone(timezone) : time
-    time_in_zone.strftime("%a, %d %b %Y %H:%M")
+    time_in_zone(time, timezone).strftime("%a, %d %b %Y %H:%M")
   end
 
   # Format date only (YYYY-MM-DD)
@@ -59,8 +56,8 @@ module TimeFormatHelper
   def format_time_with_zone(time, timezone:)
     return "" unless time
 
-    time_in_zone = time.in_time_zone(timezone)
-    "#{time_in_zone.strftime('%H:%M')} #{time_in_zone.zone}"
+    time_with_tz = time.in_time_zone(timezone)
+    "#{time_with_tz.strftime('%H:%M')} #{time_with_tz.zone}"
   end
 
   # Format appointment time for customer display
@@ -82,8 +79,8 @@ module TimeFormatHelper
   def format_appointment_time_with_zone(appointment)
     return "" unless appointment&.scheduled_at && appointment.office
 
-    time_in_zone = appointment.scheduled_at.in_time_zone(appointment.office.time_zone)
-    "#{time_in_zone.strftime('%Y-%m-%d %H:%M')} #{time_in_zone.zone}"
+    time_with_tz = appointment.scheduled_at.in_time_zone(appointment.office.time_zone)
+    "#{time_with_tz.strftime('%Y-%m-%d %H:%M')} #{time_with_tz.zone}"
   end
 
   # Format duration in minutes to hours and minutes
@@ -128,5 +125,15 @@ module TimeFormatHelper
     mins = minutes % 60
 
     format("%02d:%02d", hours, mins)
+  end
+
+  private
+
+  # Shared timezone conversion helper
+  # @param time [Time, DateTime, ActiveSupport::TimeWithZone]
+  # @param timezone [String, nil] optional timezone
+  # @return [ActiveSupport::TimeWithZone] time converted to specified zone
+  def time_in_zone(time, timezone)
+    timezone ? time.in_time_zone(timezone) : time
   end
 end

@@ -1,3 +1,10 @@
+# Manages appointment scheduling and booking for providers and customers
+#
+# Tracks scheduled appointments with:
+# - Provider, customer, and office associations
+# - Scheduled time and duration
+# - Status tracking (pending, confirmed, cancelled, completed)
+# - Automatic duration calculation from work schedules
 class Appointment < ApplicationRecord
   DEFAULT_DURATION_MINUTES = SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION
 

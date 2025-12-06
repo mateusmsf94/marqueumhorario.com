@@ -13,7 +13,7 @@ module MembershipManagement
   # @return [Boolean] true if user manages this office
   def managed_by?(user)
     return false unless user
-    
+
     users.exists?(user.id)
   end
 
@@ -25,7 +25,7 @@ module MembershipManagement
   def add_manager(user)
     return false unless user
     return true if managed_by?(user)
-    
+
     users << user
     true
   rescue ActiveRecord::RecordInvalid

@@ -1,3 +1,9 @@
+# User account model supporting both providers and customers
+#
+# Handles user authentication and role-based functionality:
+# - Provider users can manage offices, schedules, and appointments
+# - Customer users can book and track appointments
+# - Role-based authorization via Pundit policies
 class User < ApplicationRecord
   # String length constraints
   MAX_NAME_LENGTH = 100

@@ -7,7 +7,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("08:00"), end_time: Time.zone.parse("09:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first
@@ -17,7 +17,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("13:00"), end_time: Time.zone.parse("14:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first
@@ -27,7 +27,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("09:00"), end_time: Time.zone.parse("13:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 0, result.size
   end
@@ -36,7 +36,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 0, result.size
   end
@@ -45,7 +45,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("09:00"), end_time: Time.zone.parse("11:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 1, result.size
     assert_equal Time.zone.parse("11:00"), result.first.start_time
@@ -56,7 +56,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("11:00"), end_time: Time.zone.parse("13:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 1, result.size
     assert_equal Time.zone.parse("10:00"), result.first.start_time
@@ -67,7 +67,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("14:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("11:00"), end_time: Time.zone.parse("12:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 2, result.size
     assert_equal Time.zone.parse("10:00"), result[0].start_time
@@ -130,7 +130,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("08:00"), end_time: Time.zone.parse("10:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first
@@ -140,7 +140,7 @@ class PeriodSubtractorServiceTest < ActiveSupport::TestCase
     period = TimePeriod.new(start_time: Time.zone.parse("10:00"), end_time: Time.zone.parse("12:00"))
     time_range = TimePeriod.new(start_time: Time.zone.parse("12:00"), end_time: Time.zone.parse("14:00"))
 
-    result = PeriodSubtractorService.call([period], time_range)
+    result = PeriodSubtractorService.call([ period ], time_range)
 
     assert_equal 1, result.size
     assert_equal period, result.first

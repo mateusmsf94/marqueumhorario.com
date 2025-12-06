@@ -294,7 +294,7 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       provider: @provider,
       day_of_week: 3, # Wednesday
       is_active: true,
-      work_periods: [{ "start" => "10:00", "end" => "16:00" }],
+      work_periods: [ { "start" => "10:00", "end" => "16:00" } ],
       opening_time: "10:00",
       closing_time: "16:00",
       slot_duration_minutes: 60,
@@ -324,7 +324,7 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       provider: @provider,
       day_of_week: 2, # Tuesday
       is_active: true,
-      work_periods: [{ "start" => "09:00", "end" => "17:00" }],
+      work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
       opening_time: "09:00",
       closing_time: "17:00",
       slot_duration_minutes: 60,
@@ -363,7 +363,7 @@ class WeeklyAvailabilityCalculatorTest < ActiveSupport::TestCase
       provider: other_provider,
       day_of_week: 4, # Thursday
       is_active: true,
-      work_periods: [{ "start" => "09:00", "end" => "17:00" }],
+      work_periods: [ { "start" => "09:00", "end" => "17:00" } ],
       opening_time: "09:00",
       closing_time: "17:00",
       slot_duration_minutes: 60,

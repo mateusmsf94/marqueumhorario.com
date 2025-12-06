@@ -286,7 +286,7 @@ class WorkScheduleTest < ActiveSupport::TestCase
     date = Date.today
     config = schedule.slot_configuration_for_date(date)
 
-    expected_total = schedule.slot_duration_minutes.minutes + 
+    expected_total = schedule.slot_duration_minutes.minutes +
                      schedule.slot_buffer_minutes.minutes
     assert_equal expected_total, config.total_slot_duration
   end

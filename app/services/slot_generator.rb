@@ -1,5 +1,9 @@
 # app/services/slot_generator.rb
 
+# Generates available appointment slots for a date range
+#
+# Creates time slots based on work schedule configuration,
+# handling multiple work periods per day and slot duration/buffer settings.
 class SlotGenerator
   # Immutable value object representing an appointment slot
   AvailableSlot = Data.define(:start_time, :end_time, :status, :office_id)

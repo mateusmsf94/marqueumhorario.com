@@ -13,7 +13,7 @@ module Geocodable
 
     # Configure Geocoder gem
     geocoded_by :full_address
-    
+
     # Trigger geocoding after validation if address changed
     after_validation :geocode_if_address_changed
   end
@@ -24,7 +24,7 @@ module Geocodable
   def address_fields_changed?
     return false unless address_fields_present?
     return true if new_record?
-    
+
     any_address_field_changed?
   end
 
@@ -36,7 +36,7 @@ module Geocodable
   # @return [void]
   def geocode_if_address_changed
     return unless address_fields_changed?
-    
+
     GeocodeOfficeService.new(self).call
   end
 
@@ -45,7 +45,7 @@ module Geocodable
   #
   # @return [String] Full address
   def full_address
-    [address, city, state, zip_code].compact.join(", ")
+    [ address, city, state, zip_code ].compact.join(", ")
   end
 
   # Check if any address field is present

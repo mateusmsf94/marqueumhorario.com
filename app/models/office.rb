@@ -1,3 +1,10 @@
+# Represents physical office locations for providers
+#
+# Manages office data including:
+# - Name, address, and geographic coordinates
+# - Time zone for appointment scheduling
+# - Provider memberships and work schedules
+# - Active/inactive status
 class Office < ApplicationRecord
   # String length constraints
   MAX_NAME_LENGTH = 255      # Standard VARCHAR limit

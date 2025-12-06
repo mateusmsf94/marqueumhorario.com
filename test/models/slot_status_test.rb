@@ -10,7 +10,7 @@ class SlotStatusTest < ActiveSupport::TestCase
   end
 
   test "ALL contains all valid statuses" do
-    assert_equal ["available", "busy"], SlotStatus::ALL
+    assert_equal [ "available", "busy" ], SlotStatus::ALL
   end
 
   test "valid? returns true for AVAILABLE" do

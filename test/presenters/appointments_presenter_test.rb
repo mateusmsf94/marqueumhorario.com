@@ -6,7 +6,7 @@ class AppointmentsPresenterTest < ActiveSupport::TestCase
       appointments(:pending_appointment),
       appointments(:confirmed_appointment)
     ]
-    
+
     @presenter = AppointmentsPresenter.new(@appointments)
   end
 
@@ -16,7 +16,7 @@ class AppointmentsPresenterTest < ActiveSupport::TestCase
 
   test "groups appointments by date" do
     grouped = @presenter.grouped_by_date
-    
+
     assert_instance_of Hash, grouped
     assert grouped.keys.all? { |key| key.is_a?(Date) }
   end
@@ -27,7 +27,7 @@ class AppointmentsPresenterTest < ActiveSupport::TestCase
 
   test "handles empty appointments" do
     empty_presenter = AppointmentsPresenter.new([])
-    
+
     assert_equal 0, empty_presenter.total_count
     assert_equal({}, empty_presenter.grouped_by_date)
   end

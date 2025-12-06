@@ -1,3 +1,9 @@
+# Manages provider work schedules for offices
+#
+# Defines when providers are available to accept appointments, including:
+# - Day of week and time periods
+# - Slot duration and buffer configuration
+# - Active/inactive status for schedule versioning
 class WorkSchedule < ApplicationRecord
   include TimeParsing
 
@@ -89,16 +95,9 @@ class WorkSchedule < ApplicationRecord
   end
 
   # Calculate total work minutes from all periods
+  # Delegates to WorkScheduleCalculator service
   def total_work_minutes
-    return 0 unless opening_time && closing_time
-    return 0 if work_periods.blank?
-
-    work_periods.sum do |period|
-      start_minutes = TimeParsing.parse_time_to_minutes(period["start"])
-      end_minutes = TimeParsing.parse_time_to_minutes(period["end"])
-
-      end_minutes - start_minutes
-    end
+    calculator.total_work_minutes
   end
 
   # Get first period start time (for backward compatibility)
@@ -115,10 +114,10 @@ class WorkSchedule < ApplicationRecord
     work_periods.last&.dig("end")
   end
 
+  # Calculate maximum appointments that can fit in a work day
+  # Delegates to WorkScheduleCalculator service
   def max_appointments_per_day
-    return 0 if total_work_minutes.zero? || slot_duration_minutes.zero?
-
-    (total_work_minutes / (slot_duration_minutes + slot_buffer_minutes)).floor
+    calculator.max_appointments_per_day
   end
 
   def activate!
@@ -130,6 +129,10 @@ class WorkSchedule < ApplicationRecord
   end
 
   private
+
+  def calculator
+    @calculator ||= WorkScheduleCalculator.new(self)
+  end
 
   def work_day_must_accommodate_at_least_one_slot
     return unless opening_time && closing_time && slot_duration_minutes

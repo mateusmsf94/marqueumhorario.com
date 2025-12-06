@@ -67,19 +67,19 @@ class WorkScheduleCollection
 
     # Explicitly validate and populate errors for open schedules
     is_valid = open_schedules.all?(&:valid?)
-    
+
     # Populate errors from individual schedules for display
     unless is_valid
       open_schedules.each do |schedule|
         next if schedule.errors.empty?
-        
+
         day_name = schedule.day_name
         schedule.errors.full_messages.each do |message|
           errors.add(:base, "#{day_name}: #{message}")
         end
       end
     end
-    
+
     is_valid
   end
 

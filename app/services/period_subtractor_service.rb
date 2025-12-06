@@ -28,10 +28,10 @@ class PeriodSubtractorService
   attr_reader :periods, :range_start, :range_end
 
   def subtract_range_from_period(period)
-    return [period] if no_overlap?(period)
+    return [ period ] if no_overlap?(period)
     return [] if complete_overlap?(period)
-    return [keep_end_portion(period)] if overlaps_start?(period)
-    return [keep_start_portion(period)] if overlaps_end?(period)
+    return [ keep_end_portion(period) ] if overlaps_start?(period)
+    return [ keep_start_portion(period) ] if overlaps_end?(period)
     return split_period(period) if splits_period?(period)
 
     []
