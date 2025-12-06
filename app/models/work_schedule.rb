@@ -1,6 +1,17 @@
 class WorkSchedule < ApplicationRecord
   include TimeParsing
 
+  # Day of week constraints
+  MIN_DAY_OF_WEEK = 0  # Sunday
+  MAX_DAY_OF_WEEK = 6  # Saturday
+
+  # Slot timing constraints
+  MIN_SLOT_DURATION = 0  # minutes (must be > 0 per validation)
+  MIN_SLOT_BUFFER = 0    # minutes
+
+  # Time conversion
+  MINUTES_PER_HOUR = 60
+
   # Associations
   belongs_to :office
   belongs_to :provider, class_name: "User"
@@ -9,17 +20,17 @@ class WorkSchedule < ApplicationRecord
   validates :office_id, presence: true
   validates :provider_id, presence: true
   validates :day_of_week, presence: true,
-                          numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 6 },
+                          numericality: { only_integer: true, greater_than_or_equal_to: MIN_DAY_OF_WEEK, less_than_or_equal_to: MAX_DAY_OF_WEEK },
                           uniqueness: { scope: [ :provider_id, :office_id, :is_active ], if: :is_active?, message: "can only have one active schedule per day per provider per office" }
 
   validates :opening_time, presence: true
   validates :closing_time, presence: true
 
   validates :slot_duration_minutes, presence: true,
-                                    numericality: { only_integer: true, greater_than: 0 }
+                                    numericality: { only_integer: true, greater_than: MIN_SLOT_DURATION }
 
   validates :slot_buffer_minutes, presence: true,
-                                  numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+                                  numericality: { only_integer: true, greater_than_or_equal_to: MIN_SLOT_BUFFER }
 
   # Custom validations
   validates_with TimeRangeValidator, start: :opening_time, end: :closing_time
@@ -124,8 +135,8 @@ class WorkSchedule < ApplicationRecord
     return unless opening_time && closing_time && slot_duration_minutes
 
     # Convert times to minutes for comparison
-    opening_minutes = opening_time.hour * 60 + opening_time.min
-    closing_minutes = closing_time.hour * 60 + closing_time.min
+    opening_minutes = opening_time.hour * MINUTES_PER_HOUR + opening_time.min
+    closing_minutes = closing_time.hour * MINUTES_PER_HOUR + closing_time.min
     available_minutes = closing_minutes - opening_minutes
 
     if available_minutes < slot_duration_minutes

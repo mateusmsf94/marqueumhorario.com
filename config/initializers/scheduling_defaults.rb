@@ -15,6 +15,10 @@ module SchedulingDefaults
   # Default work day end time (24-hour format)
   DEFAULT_WORK_END = "17:00"
 
+  # Form checkbox values (Rails conventions)
+  FORM_CHECKED_VALUE = "1"    # Value when checkbox is checked
+  FORM_UNCHECKED_VALUE = "0"  # Value when checkbox is unchecked
+
   # Days of week mapping (inherits from WorkSchedule for consistency)
   # This will be set after WorkSchedule model loads
   def self.days_of_week

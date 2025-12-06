@@ -120,7 +120,7 @@ class WeeklyAvailabilityCalculator
     @total_slots ||= all_slots.count
   end
 
-  # Number of available (unboo ked) slots
+  # Number of available (unbooked) slots
   #
   # @return [Integer]
   def available_slots

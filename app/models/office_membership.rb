@@ -1,4 +1,7 @@
 class OfficeMembership < ApplicationRecord
+  # String length constraints
+  MAX_ROLE_LENGTH = 50
+
   # Associations
   belongs_to :user
   belongs_to :office
@@ -6,7 +9,7 @@ class OfficeMembership < ApplicationRecord
   # Validations
   validates :user_id, presence: true
   validates :office_id, presence: true
-  validates :role, presence: true, length: { maximum: 50 }
+  validates :role, presence: true, length: { maximum: MAX_ROLE_LENGTH }
   validates :user_id, uniqueness: { scope: :office_id,
     message: "is already a member of this office" }
 

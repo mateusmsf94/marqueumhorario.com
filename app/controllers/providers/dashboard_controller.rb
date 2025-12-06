@@ -1,4 +1,7 @@
 class Providers::DashboardController < ApplicationController
+  # Pagination limits for dashboard views
+  DASHBOARD_APPOINTMENTS_LIMIT = 20
+
   before_action :authenticate_user!
   before_action :ensure_has_office
 
@@ -10,12 +13,12 @@ class Providers::DashboardController < ApplicationController
                                      .by_status(:pending)
                                      .upcoming
                                      .includes(:customer, :office)
-                                     .limit(20)
+                                     .limit(DASHBOARD_APPOINTMENTS_LIMIT)
 
     upcoming_appointments = current_user.provider_appointments
                                       .upcoming
                                       .includes(:customer, :office)
-                                      .limit(20)
+                                      .limit(DASHBOARD_APPOINTMENTS_LIMIT)
 
     @appointments_presenter = AppointmentsPresenter.new(upcoming_appointments)
   end
@@ -23,7 +26,7 @@ class Providers::DashboardController < ApplicationController
   private
 
   def ensure_has_office
-    unless current_user.offices.exists?
+    unless current_user.provider?
       redirect_to new_providers_onboarding_path,
         notice: "Welcome! Let's create your first office to get started."
     end

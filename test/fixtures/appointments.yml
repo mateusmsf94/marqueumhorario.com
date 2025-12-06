@@ -12,7 +12,7 @@ pending_appointment:
 
 confirmed_appointment:
   title: Dentist Appointment
-  scheduled_at: <%= 2.days.from_now %>
+  scheduled_at: <%= 10.days.from_now %>
   description: Teeth cleaning
   status: confirmed
   office: main_office

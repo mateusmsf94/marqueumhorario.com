@@ -1,5 +1,8 @@
 class Appointment < ApplicationRecord
-  DEFAULT_DURATION_MINUTES = 50
+  DEFAULT_DURATION_MINUTES = SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION
+
+  # String length constraints
+  MAX_TITLE_LENGTH = 255  # Standard VARCHAR limit
 
   # Associations
   belongs_to :office
@@ -13,7 +16,7 @@ class Appointment < ApplicationRecord
 
   # Validations
   validates :office_id, presence: true
-  validates :title, presence: true, length: { maximum: 255 }
+  validates :title, presence: true, length: { maximum: MAX_TITLE_LENGTH }
   validates :scheduled_at, presence: true
   validates :status, presence: true
 

@@ -2,7 +2,7 @@ module ApplicationHelper
   include TimeFormatHelper
 
   def user_is_provider?
-    user_signed_in? && current_user.offices.exists?
+    user_signed_in? && current_user.provider?
   end
 
   def user_has_appointments?

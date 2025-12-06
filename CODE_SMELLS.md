@@ -1,2003 +1,2038 @@
 # Code Smells Analysis Report
 
-**Generated:** 2025-12-05
-**Codebase:** Marque Um Horário - Brazilian Appointment Scheduling System
-**Total Issues Found:** 20 distinct code smells across 10 categories
+**Project**: Marque Um Horário - Appointment Scheduling System
+**Generated**: December 5, 2025
+**Rails Version**: 8.1.1
+**Total Issues**: 20 (4 High | 7 Medium | 9 Low)
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [Quick Wins Checklist](#quick-wins-checklist)
-3. [Detailed Findings by Category](#detailed-findings-by-category)
-   - [1. God Objects & Single Responsibility Violations](#1-god-objects--single-responsibility-violations)
-   - [2. Code Duplication (DRY Violations)](#2-code-duplication-dry-violations)
-   - [3. Complex Conditionals & Long Methods](#3-complex-conditionals--long-methods)
-   - [4. Feature Envy](#4-feature-envy)
-   - [5. Magic Numbers & Strings](#5-magic-numbers--strings)
-   - [6. N+1 Query Risks](#6-n1-query-risks)
-   - [7. Callback Overuse](#7-callback-overuse)
-   - [8. Naming Inconsistencies](#8-naming-inconsistencies)
-   - [9. Missing Error Handling](#9-missing-error-handling)
-   - [10. Primitive Obsession](#10-primitive-obsession)
-4. [Refactoring Roadmap](#refactoring-roadmap)
-5. [Testing Impact](#testing-impact)
-6. [References](#references)
+2. [How to Use This Document](#how-to-use-this-document)
+3. [High Priority Issues](#high-priority-issues)
+   - [H1: Potential N+1 Query Issues in MembershipManagement](#h1-potential-n1-query-issues-in-membershipmanagement)
+   - [H2: Complex Validation Logic in WorkSchedule](#h2-complex-validation-logic-in-workschedule)
+   - [H3: Inefficient Time Duration Calculation in AvailabilityService](#h3-inefficient-time-duration-calculation-in-availabilityservice)
+   - [H4: Database Query in Appointment before_save Callback](#h4-database-query-in-appointment-before_save-callback)
+4. [Medium Priority Issues](#medium-priority-issues)
+   - [M1: Fat Model - WorkScheduleCollection](#m1-fat-model---workschedulecollection)
+   - [M2: Missing Database Indexes](#m2-missing-database-indexes)
+   - [M3: Magic Numbers in Validations](#m3-magic-numbers-in-validations)
+   - [M4: Unclear Method Naming in WorkSchedule](#m4-unclear-method-naming-in-workschedule)
+   - [M5: Duplicate Code Pattern - activate!/deactivate!](#m5-duplicate-code-pattern---activatedeactivate)
+   - [M6: Inconsistent Hash Key Access](#m6-inconsistent-hash-key-access)
+   - [M7: Missing Scopes for Common Queries](#m7-missing-scopes-for-common-queries)
+5. [Low Priority Issues](#low-priority-issues)
+   - [L1: Boolean Trap in GeocodeOfficeService](#l1-boolean-trap-in-geocodeofficeservice)
+   - [L2: Inconsistent Default Duration Constants](#l2-inconsistent-default-duration-constants)
+   - [L3: Complex Conditional in AvailabilityCalendar](#l3-complex-conditional-in-availabilitycalendar)
+   - [L4: Typo in Comment](#l4-typo-in-comment)
+   - [L5: Unused Private Method](#l5-unused-private-method)
+   - [L6: Missing Tests for Services and Concerns](#l6-missing-tests-for-services-and-concerns)
+   - [L7: Hard-coded Pagination Limits](#l7-hard-coded-pagination-limits)
+   - [L8: Missing Eager Loading in Controllers](#l8-missing-eager-loading-in-controllers)
+   - [L9: Duplicate Role Checking Pattern](#l9-duplicate-role-checking-pattern)
+6. [Prevention Patterns](#prevention-patterns)
+7. [References](#references)
 
 ---
 
 ## Executive Summary
 
-### Overview
-This report documents 20 code smells identified across the codebase, ranging from architectural issues (god objects) to tactical concerns (magic numbers). The findings span models, controllers, services, validators, and concerns.
+### Health Metrics
 
-### Severity Distribution
+| Metric | Count | Status |
+|--------|-------|--------|
+| High Priority Issues | 4 | 🔴 Needs Attention |
+| Medium Priority Issues | 7 | 🟡 Plan for Refactoring |
+| Low Priority Issues | 9 | 🟢 Address Opportunistically |
+| Total Active Issues | 20 | 📊 Manageable |
+| Quick Wins (< 2 hours) | 6 | ✨ Easy Improvements |
 
-| Severity | Count | Impact | Examples |
-|----------|-------|--------|----------|
-| 🔴 **High** | 5 | Critical maintainability and testability issues | God objects, complex algorithms, major duplication |
-| 🟡 **Medium** | 11 | Important issues affecting code quality | Feature envy, magic numbers, missing error handling |
-| 🟢 **Low** | 4 | Minor improvements | Dead code, outdated comments, format inconsistencies |
+### Quick Impact Assessment
 
-### Files Most Affected
+**What's Working Well:**
+- ✅ Strong service layer with single responsibility (AvailabilityService, SlotGenerator, etc.)
+- ✅ Value objects for data encapsulation (TimePeriod, SlotConfiguration)
+- ✅ Comprehensive use of concerns (TemporalScopes, TimeParsing, Geocodable)
+- ✅ Consistent use of scopes for common queries
+- ✅ Recent refactoring success (WorkScheduleCollection decomposition)
 
-| File | Issues | Severity | Lines |
-|------|--------|----------|-------|
-| `app/models/work_schedule_collection.rb` | 4 | 🔴 High | 242 |
-| `app/services/availability_service.rb` | 3 | 🔴 High | 165 |
-| `app/models/office.rb` | 3 | 🟡 Medium | 95 |
-| `app/services/slot_generator.rb` | 3 | 🟡 Medium | 78 |
-| `app/models/appointment.rb` | 2 | 🟡 Medium | 75 |
+**What Needs Attention:**
+1. 🔴 Performance: N+1 query potential and inefficient calculations
+2. 🔴 Complexity: Database queries in callbacks affecting performance
+3. 🟡 Maintainability: Magic numbers and duplicate patterns
+4. 🟡 Testing: Missing test coverage for 3 services and 1 concern
 
-### Quick Statistics
-- **Total files with issues:** 15
-- **Total lines of code affected:** ~800+
-- **Estimated refactoring effort:** 40-60 hours
-- **Quick wins available:** 8 issues (< 2 hours total)
+**Quick Wins Available:**
+- L4: Fix typo in comment (5 minutes)
+- L5: Remove unused private method (10 minutes)
+- L2: Consolidate duplicate constants (30 minutes)
+- L7: Extract hard-coded limits to constants (1 hour)
+- L9: Add `provider?` helper method (1 hour)
+- M3: Extract magic numbers to named constants (1.5 hours)
 
----
-
-## Quick Wins Checklist
-
-These are easy fixes that provide immediate value with minimal risk:
-
-- [ ] **Extract Magic Number Constants** (30 min)
-  - File: `app/models/work_schedule_collection.rb`
-  - Replace hardcoded `50`, `10`, `"09:00"`, `"17:00"` with named constants
-
-- [ ] **Standardize Time Regex Pattern** (15 min)
-  - Files: `app/validators/work_period_validator.rb`, `app/models/concerns/time_parsing.rb`
-  - Create `TIME_FORMAT_REGEX` constant in `TimeParsing` module
-
-- [ ] **Remove Outdated Comments** (10 min)
-  - File: `app/services/slot_generator.rb:13`
-  - Delete comment about removed global `@duration`
-
-- [ ] **Add Office Existence Validation** (20 min)
-  - File: `app/models/user.rb:43-49`
-  - Add nil/existence checks in `add_office` and `remove_office` methods
-
-- [ ] **Move Group By Logic to Presenter** (30 min)
-  - File: `app/controllers/providers/dashboard_controller.rb:15-19`
-  - Extract `group_by` logic into `AppointmentsPresenter` class
-
-- [ ] **Simplify Address Fields Check** (20 min)
-  - File: `app/models/office.rb:62-67`
-  - Break nested conditional into smaller, named methods
-
-- [ ] **Create SlotStatus Enum** (20 min)
-  - File: `app/services/slot_generator.rb:73-78`
-  - Replace string "available"/"busy" with constants
-
-- [ ] **Add Error Cause Preservation** (15 min)
-  - File: `app/services/weekly_availability_calculator.rb:43-56`
-  - Add `cause:` parameter to exception re-raising
-
-**Total Quick Wins Effort:** ~2.5 hours
-**Impact:** Improved readability, reduced magic values, better error handling
+**Total Quick Win Effort:** ~4 hours for 6 improvements
 
 ---
 
-## Detailed Findings by Category
+## How to Use This Document
+
+### For Developers
+
+**Prioritization Guide:**
+- 🔴 **High Priority**: Address before new features or when working in related areas. These impact performance or add significant complexity.
+- 🟡 **Medium Priority**: Address during related work or dedicated refactoring sprints. These improve maintainability.
+- 🟢 **Low Priority**: Address during cleanup sprints or as learning exercises. These polish code quality.
+
+**Effort Indicators:**
+- ⏱️ **Quick** (< 2 hours): Can be done in a single sitting, minimal risk
+- ⏱️⏱️ **Medium** (2-8 hours): Requires careful planning, moderate testing
+- ⏱️⏱️⏱️ **Large** (8+ hours): Significant refactoring, comprehensive testing needed
+
+**Implementation Strategy:**
+1. Start with Quick Wins to build momentum
+2. Tackle High Priority issues before major feature work
+3. Address Medium Priority issues during related refactoring
+4. Schedule dedicated time for Low Priority issues periodically
+
+### For Code Reviewers
+
+**Use this document to:**
+- Check PRs against documented patterns
+- Prevent introduction of similar code smells
+- Suggest refactoring opportunities when related code is modified
+- Ensure new code follows Prevention Patterns (see section below)
+
+**Red Flags in Code Review:**
+- ❌ New callbacks that query the database
+- ❌ Hard-coded magic numbers instead of named constants
+- ❌ Missing eager loading on associations
+- ❌ Duplicate code that could be extracted to concerns
+- ❌ Business logic in controllers
 
 ---
 
-### 1. God Objects & Single Responsibility Violations
+## High Priority Issues
 
-#### 🔴 Issue 1.1: WorkScheduleCollection - God Object with Too Many Responsibilities
+### H1: Potential N+1 Query Issues in MembershipManagement
 
-**File:** `app/models/work_schedule_collection.rb` (242 lines)
-**Severity:** 🔴 High
-**Effort to Fix:** 8-12 hours
+**Category**: Performance
+**Effort**: ⏱️⏱️ Medium (~4 hours)
+**Impact**: Performance degradation at scale - each office iteration triggers additional queries
 
-**Problem:**
-This form object violates the Single Responsibility Principle by handling:
-- Form data parsing and transformation (lines 125-175)
-- Validation logic (lines 95-100)
-- Persistence with complex transactions (lines 40-89)
-- Schedule loading from database (lines 194-215)
-- Parameter extraction (lines 221-230)
+**Description**:
+The `MembershipManagement` concern includes methods like `managed_by?` and `active_managers` that execute database queries. When these methods are called within loops (e.g., iterating over offices), they create N+1 query problems that can significantly degrade performance as the dataset grows.
 
-**Why It's Problematic:**
-- 242 lines for a single class that should focus on form presentation
-- Multiple reasons to change (parsing, validation, persistence)
-- Difficult to test individual responsibilities in isolation
-- High cognitive load when maintaining
-- Violates SOLID principles (Single Responsibility, Open/Closed)
-
-**Code Example (Current):**
+**Evidence**:
 ```ruby
-class WorkScheduleCollection
-  def save
-    # Validation
-    unless valid?
-      return false
-    end
+# File: app/models/concerns/membership_management.rb:17
+def managed_by?(user)
+  return false unless user
+  users.exists?(user.id)  # ⚠️ Executes query each time
+end
 
-    # Transaction logic
-    ActiveRecord::Base.transaction do
-      deactivate_existing_schedules
-      @schedules.each(&:save!)
-    end
-    true
-  rescue ActiveRecord::RecordInvalid => e
-    # Error handling
-    false
-  end
+# File: app/models/concerns/membership_management.rb:49
+def active_managers
+  users.where(office_memberships: { is_active: true })  # ⚠️ Not optimized for eager loading
+end
+```
 
-  private
+**Problem Analysis**:
+- `managed_by?` calls `users.exists?` which executes a query every time it's called
+- When iterating over offices (e.g., `@offices.each { |office| office.managed_by?(user) }`), this creates N+1 queries
+- `active_managers` requires a join but doesn't leverage eager loading efficiently
+- No documentation warning developers about N+1 potential
 
-  def parse_schedule_params(params)
-    # 50+ lines of parsing logic
-  end
-
-  def load_schedules_from_database
-    # 20+ lines of database queries
+**Real-World Impact**:
+```ruby
+# Controller code that triggers N+1:
+@offices = current_user.offices  # 1 query
+@offices.each do |office|
+  if office.managed_by?(some_user)  # N additional queries!
+    # ...
   end
 end
 ```
 
-**Refactoring Solution:**
+**Proposed Solution**:
 
-Split into three focused classes:
-
+**Option 1: Add Documentation** (Quickest - 1 hour)
 ```ruby
-# app/services/schedules_form_data_parser.rb
-class SchedulesFormDataParser
-  def initialize(params)
-    @params = params
-  end
-
-  def parse
-    (0..6).map { |day| parse_day_schedule(day) }
-  end
-
-  private
-
-  def parse_day_schedule(day_number)
-    # Focused parsing logic only
-  end
-end
-
-# app/services/schedules_persistence_service.rb
-class SchedulesPersistenceService
-  def initialize(schedules, provider)
-    @schedules = schedules
-    @provider = provider
-  end
-
-  def save
-    ActiveRecord::Base.transaction do
-      deactivate_existing_schedules
-      create_new_schedules
-    end
-  end
-
-  private
-
-  def deactivate_existing_schedules
-    @provider.work_schedules.update_all(is_active: false)
-  end
-end
-
-# app/models/work_schedule_collection.rb (simplified)
-class WorkScheduleCollection
-  def initialize(provider:, office:, params: {})
-    @provider = provider
-    @office = office
-    @parser = SchedulesFormDataParser.new(params)
-    @schedules = load_or_build_schedules
-  end
-
-  def save
-    return false unless valid?
-    SchedulesPersistenceService.new(@schedules, @provider).save
-  end
-
-  def valid?
-    @schedules.all?(&:valid?)
-  end
-end
-```
-
-**Benefits:**
-- Each class has a single, clear responsibility
-- Easier to test (can test parser independently of persistence)
-- Reduced cognitive load (each class < 80 lines)
-- Follows SOLID principles
-- Easier to extend or modify individual components
-
-**Testing Impact:**
-- Update `test/models/work_schedule_collection_test.rb`
-- Create `test/services/schedules_form_data_parser_test.rb`
-- Create `test/services/schedules_persistence_service_test.rb`
-
----
-
-#### 🔴 Issue 1.2: Office Model - Multiple Concerns in Single Class
-
-**File:** `app/models/office.rb` (95 lines)
-**Severity:** 🔴 High
-**Effort to Fix:** 4-6 hours
-
-**Problem:**
-The Office model handles multiple unrelated concerns:
-- Core office attributes and associations (expected)
-- Geocoding configuration and callbacks (lines 13, 62-87)
-- Office membership management (lines 89-94)
-- Complex address validation logic (lines 62-67)
-
-**Why It's Problematic:**
-- Multiple reasons to change (address validation, geocoding API, membership logic)
-- Hard to test geocoding without triggering full model validations
-- Membership logic could be reused but is tightly coupled to Office
-- 95 lines for what should be a simpler domain model
-
-**Code Example (Current):**
-```ruby
-class Office < ApplicationRecord
-  # Associations
-  has_many :office_memberships
-  has_many :users, through: :office_memberships
-
-  # Geocoding
-  geocoded_by :full_address
-  after_validation :geocode_address_if_needed
-
-  # Validations
-  validates :name, presence: true
-  validate :address_completeness
-
-  private
-
-  def geocode_address_if_needed
-    return unless address_fields_changed?
-    # Geocoding logic
-  end
-
-  def address_fields_changed?
-    # Complex conditional logic
-  end
-
-  def assign_manager_membership
-    # Membership logic
-  end
-end
-```
-
-**Refactoring Solution:**
-
-Extract concerns into separate modules:
-
-```ruby
-# app/models/concerns/geocodable.rb
-module Geocodable
+# File: app/models/concerns/membership_management.rb
+module MembershipManagement
   extend ActiveSupport::Concern
 
-  included do
-    geocoded_by :full_address
-    after_validation :geocode_if_address_changed
-  end
-
-  private
-
-  def geocode_if_address_changed
-    return unless should_geocode?
-    GeocodeOfficeService.new(self).call
-  end
-
-  def should_geocode?
-    address_fields_present? && address_fields_changed?
-  end
-
-  def address_fields_changed?
-    return false unless address_fields_present?
-    return true if new_record?
-
-    will_save_change_to_address? ||
-      will_save_change_to_city? ||
-      will_save_change_to_state? ||
-      will_save_change_to_zip_code?
-  end
-end
-
-# app/models/concerns/member_management.rb
-module MemberManagement
-  extend ActiveSupport::Concern
-
-  def assign_manager(user, role: "owner")
-    office_memberships.find_or_create_by!(user: user) do |membership|
-      membership.role = role
-    end
-  end
-
-  def remove_member(user)
-    office_memberships.find_by(user: user)&.update(is_active: false)
-  end
-end
-
-# app/models/office.rb (simplified)
-class Office < ApplicationRecord
-  include Geocodable
-  include MemberManagement
-
-  # Associations
-  has_many :office_memberships, dependent: :destroy
-  has_many :users, through: :office_memberships
-  has_many :work_schedules, dependent: :destroy
-  has_many :appointments, dependent: :destroy
-
-  # Validations
-  validates :name, presence: true, length: { maximum: 255 }
-  validates :time_zone, presence: true
-  validate :address_completeness
-
-  # Scopes
-  scope :active, -> { where(is_active: true) }
-
-  private
-
-  def address_completeness
-    # Simplified validation logic
+  # ⚠️ N+1 WARNING: When checking management for multiple offices,
+  # use eager loading: Office.includes(:users).where(...)
+  # Or load all managed offices at once: current_user.offices
+  def managed_by?(user)
+    return false unless user
+    users.exists?(user.id)
   end
 end
 ```
 
-**Benefits:**
-- Separation of concerns (geocoding, memberships, core model)
-- Each concern can be tested independently
-- Concerns can be reused in other models if needed
-- Office model reduced to ~40 lines
-- Clearer responsibilities
+**Option 2: Add Scope-Based Alternative** (Better - 3 hours)
+```ruby
+# File: app/models/office.rb
+scope :managed_by_user, ->(user) {
+  joins(:office_memberships)
+    .where(office_memberships: { user_id: user.id, is_active: true })
+}
 
-**Testing Impact:**
-- Update `test/models/office_test.rb`
-- Create `test/models/concerns/geocodable_test.rb`
-- Create `test/models/concerns/member_management_test.rb`
+# Usage in controllers:
+@offices = Office.managed_by_user(current_user)  # Single query
+```
+
+**Implementation Steps**:
+1. **Add documentation warnings** - 30 minutes
+   - Document N+1 risk in MembershipManagement concern
+   - Add usage examples showing proper eager loading
+
+2. **Create scope-based alternatives** - 2 hours
+   - Add `Office.managed_by_user(user)` scope
+   - Add `User.managing_offices` scope
+   - Update controllers to use scopes instead of iteration
+
+3. **Update controllers** - 1 hour
+   - Replace `.each { |office| office.managed_by?(user) }` patterns
+   - Add `.includes(:users)` where managed_by? must be used
+   - Verify with Bullet gem or query logging
+
+4. **Add tests** - 30 minutes
+   - Test new scopes return correct results
+   - Add performance test verifying query count
+
+**Better Code Example**:
+```ruby
+# BEFORE (N+1 problem):
+@offices = Office.all
+@offices.each do |office|
+  @can_manage = office.managed_by?(current_user)
+end
+
+# AFTER (single query):
+@offices = Office.managed_by_user(current_user)
+# or if you need all offices with eager loading:
+@offices = Office.includes(:users)
+```
+
+**Affected Files**:
+- `app/models/concerns/membership_management.rb` - Add documentation/scopes
+- `app/controllers/providers/dashboard_controller.rb` - Use eager loading
+- `app/controllers/providers/offices_controller.rb` - Use scopes
+- `test/models/concerns/membership_management_test.rb` - **CREATE THIS FILE** with scope tests
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+
+**References**:
+- [Bullet gem for N+1 detection](https://github.com/flyerhzm/bullet)
+- [Rails Guide: Active Record Query Interface](https://guides.rubyonrails.org/active_record_querying.html#eager-loading-associations)
 
 ---
 
-### 2. Code Duplication (DRY Violations)
+### H2: Complex Validation Logic in WorkSchedule
 
-#### 🔴 Issue 2.1: Duplicate Overlap Detection Logic (3 Implementations)
+**Category**: Maintainability / Code Duplication
+**Effort**: ⏱️⏱️ Medium (~3 hours)
+**Impact**: Duplicates time conversion logic that already exists in TimeParsing module
 
-**Files:**
-- `app/services/overlap_checker.rb:43-48`
-- `app/validators/work_period_validator.rb:42-49`
-- `app/values/time_period.rb:6-7`
+**Description**:
+The `work_day_must_accommodate_at_least_one_slot` validation in WorkSchedule manually converts times to minutes for comparison. This logic duplicates functionality already available in the `TimeParsing` module (which the model includes), violating DRY principles and increasing maintenance burden.
 
-**Severity:** 🔴 High
-**Effort to Fix:** 3-4 hours
-
-**Problem:**
-The same interval overlap algorithm is implemented in three different places with slight variations:
-
-**Current Code:**
+**Evidence**:
 ```ruby
-# overlap_checker.rb
-def overlaps?(start_time, end_time)
-  @appointments.any? do |apt|
-    apt_start = apt.start_time
-    apt_end = apt.end_time(duration_for(apt))
-    (apt_start < end_time) && (apt_end > start_time)
-  end
-end
+# File: app/models/work_schedule.rb:123-135
+def work_day_must_accommodate_at_least_one_slot
+  return unless opening_time && closing_time && slot_duration_minutes
 
-# work_period_validator.rb
-def periods_overlap?(p1, p2)
-  start1 = time_in_minutes(p1["start"])
-  end1 = time_in_minutes(p1["end"])
-  start2 = time_in_minutes(p2["start"])
-  end2 = time_in_minutes(p2["end"])
-  start1 < end2 && start2 < end1
-end
-
-# time_period.rb
-def overlaps?(other)
-  start_time < other.end_time && other.start_time < end_time
-end
-```
-
-**Why It's Problematic:**
-- Same logic in three places (DRY violation)
-- If overlap logic needs adjustment (e.g., inclusive vs exclusive bounds), must update all three
-- Risk of bugs if implementations diverge
-- Different naming conventions cause confusion
-
-**Refactoring Solution:**
-
-Centralize all overlap logic in a dedicated module:
-
-```ruby
-# app/services/interval_overlap.rb
-module IntervalOverlap
-  # Checks if two intervals overlap
-  # Intervals overlap if: start1 < end2 AND start2 < end1
-  #
-  # @param start1 [Time, Numeric] Start of first interval
-  # @param end1 [Time, Numeric] End of first interval
-  # @param start2 [Time, Numeric] Start of second interval
-  # @param end2 [Time, Numeric] End of second interval
-  # @return [Boolean] true if intervals overlap
-  def self.overlaps?(start1, end1, start2, end2)
-    start1 < end2 && start2 < end1
-  end
-
-  # Checks if an interval is completely contained within another
-  def self.contains?(outer_start, outer_end, inner_start, inner_end)
-    outer_start <= inner_start && inner_end <= outer_end
-  end
-end
-
-# Updated overlap_checker.rb
-def overlaps?(start_time, end_time)
-  @appointments.any? do |apt|
-    apt_start = apt.start_time
-    apt_end = apt.end_time(duration_for(apt))
-    IntervalOverlap.overlaps?(apt_start, apt_end, start_time, end_time)
-  end
-end
-
-# Updated work_period_validator.rb
-def periods_overlap?(p1, p2)
-  start1 = time_in_minutes(p1["start"])
-  end1 = time_in_minutes(p1["end"])
-  start2 = time_in_minutes(p2["start"])
-  end2 = time_in_minutes(p2["end"])
-
-  IntervalOverlap.overlaps?(start1, end1, start2, end2)
-end
-
-# Updated time_period.rb
-def overlaps?(other)
-  IntervalOverlap.overlaps?(start_time, end_time, other.start_time, other.end_time)
-end
-```
-
-**Benefits:**
-- Single source of truth for overlap logic
-- Well-documented algorithm with edge cases explained
-- Easy to extend with additional interval operations
-- Testable in isolation
-- Consistent behavior across codebase
-
-**Testing Impact:**
-- Create `test/services/interval_overlap_test.rb` with comprehensive overlap scenarios
-- Update tests in `overlap_checker_test.rb`, `work_period_validator_test.rb`
-
----
-
-#### 🟡 Issue 2.2: Duplicate Time Conversion Logic (3 Implementations)
-
-**Files:**
-- `app/models/work_schedule.rb:111-117`
-- `app/validators/work_period_validator.rb:50-52`
-- `app/services/availability_service.rb:56-66`
-
-**Severity:** 🟡 Medium
-**Effort to Fix:** 2-3 hours
-
-**Problem:**
-Time-to-minutes conversion is implemented multiple times, even though `TimeParsing.parse_time_to_minutes` already exists:
-
-**Current Code:**
-```ruby
-# work_schedule.rb (legacy method)
-def legacy_total_work_minutes
-  closing_minutes = closing_time.hour * 60 + closing_time.min
+  # Convert times to minutes for comparison
   opening_minutes = opening_time.hour * 60 + opening_time.min
-  closing_minutes - opening_minutes
-end
-
-# work_period_validator.rb
-def time_in_minutes(time_str)
-  TimeParsing.parse_time_to_minutes(time_str)
-end
-
-# availability_service.rb (custom implementation)
-def minutes_since_midnight(time)
-  time.hour * 60 + time.min
-end
-```
-
-**Why It's Problematic:**
-- `TimeParsing` concern already provides this functionality
-- Multiple implementations can diverge
-- Legacy methods confuse developers about which to use
-- Maintenance burden (fixing bugs in one doesn't fix others)
-
-**Refactoring Solution:**
-
-Use `TimeParsing.parse_time_to_minutes` consistently everywhere:
-
-```ruby
-# Remove from work_schedule.rb
-# Delete legacy_total_work_minutes method entirely
-
-# Keep only in TimeParsing concern
-module TimeParsing
-  def self.parse_time_to_minutes(time_string)
-    return nil unless time_string
-
-    if time_string.is_a?(Time)
-      return time_string.hour * 60 + time_string.min
-    end
-
-    if time_string.match?(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/)
-      hours, minutes = time_string.split(":").map(&:to_i)
-      (hours * 60) + minutes
-    else
-      nil
-    end
-  end
-end
-
-# In availability_service.rb, replace custom method
-def minutes_since_midnight(time)
-  TimeParsing.parse_time_to_minutes(time)
-end
-
-# In work_period_validator.rb, use directly
-def time_in_minutes(time_str)
-  TimeParsing.parse_time_to_minutes(time_str)
-end
-```
-
-**Benefits:**
-- Single source of truth
-- Consistent behavior across the application
-- Easier to fix bugs (one place to update)
-- Reduced code duplication
-
-**Testing Impact:**
-- Remove tests for `legacy_total_work_minutes`
-- Ensure `test/models/concerns/time_parsing_test.rb` has comprehensive coverage
-
----
-
-#### 🟡 Issue 2.3: Duplicated Save/Update Logic in WorkScheduleCollection
-
-**File:** `app/models/work_schedule_collection.rb:40-89`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 1-2 hours
-
-**Problem:**
-The `save` and `update` methods contain nearly identical logic:
-
-**Current Code:**
-```ruby
-def save
-  unless valid?
-    return false
-  end
-
-  ActiveRecord::Base.transaction do
-    deactivate_existing_schedules
-    @schedules.each(&:save!)
-  end
-  true
-rescue ActiveRecord::RecordInvalid => e
-  @schedules.each do |schedule|
-    schedule.errors.add(:base, e.message) if schedule.errors.empty?
-  end
-  false
-end
-
-def update(params)
-  parse_and_build_schedules(params)
-
-  unless valid?
-    return false
-  end
-
-  ActiveRecord::Base.transaction do
-    deactivate_existing_schedules
-    @schedules.each(&:save!)
-  end
-  true
-rescue ActiveRecord::RecordInvalid => e
-  @schedules.each do |schedule|
-    schedule.errors.add(:base, e.message) if schedule.errors.empty?
-  end
-  false
-end
-```
-
-**Why It's Problematic:**
-- Same validation and transaction logic duplicated
-- If error handling changes, must update both methods
-- Higher maintenance burden
-
-**Refactoring Solution:**
-
-Extract common logic to private method:
-
-```ruby
-def save
-  execute_save_transaction
-end
-
-def update(params)
-  parse_and_build_schedules(params)
-  execute_save_transaction
-end
-
-private
-
-def execute_save_transaction
-  return false unless valid?
-
-  ActiveRecord::Base.transaction do
-    deactivate_existing_schedules
-    @schedules.each(&:save!)
-  end
-  true
-rescue ActiveRecord::RecordInvalid => e
-  add_error_to_schedules(e.message)
-  false
-end
-
-def add_error_to_schedules(message)
-  @schedules.each do |schedule|
-    schedule.errors.add(:base, message) if schedule.errors.empty?
-  end
-end
-
-def deactivate_existing_schedules
-  WorkSchedule.where(
-    provider: @provider,
-    office: @office,
-    is_active: true
-  ).update_all(is_active: false)
-end
-```
-
-**Benefits:**
-- DRY principle applied
-- Single place to update transaction logic
-- Easier to test
-- Clearer method responsibilities
-
----
-
-### 3. Complex Conditionals & Long Methods
-
-#### 🔴 Issue 3.1: Complex Time Period Subtraction Algorithm
-
-**File:** `app/services/availability_service.rb:126-165`
-**Severity:** 🔴 High
-**Effort to Fix:** 4-5 hours
-
-**Problem:**
-The `subtract_time_range` method contains 5 separate case statements in a single 40-line method with complex nested conditionals:
-
-**Current Code:**
-```ruby
-def subtract_time_range(periods, range_start, range_end)
-  result = []
-
-  periods.each do |period|
-    period_start = period.start_time
-    period_end = period.end_time
-
-    # Case 1: No overlap
-    if range_end <= period_start || range_start >= period_end
-      result << period
-      next
-    end
-
-    # Case 2: Range completely covers period
-    if range_start <= period_start && range_end >= period_end
-      # Period is completely removed, don't add to result
-      next
-    end
-
-    # Case 3: Range overlaps the start of period
-    if range_start <= period_start && range_end > period_start && range_end < period_end
-      result << TimePeriod.new(range_end, period_end)
-      next
-    end
-
-    # Case 4: Range overlaps the end of period
-    if range_start > period_start && range_start < period_end && range_end >= period_end
-      result << TimePeriod.new(period_start, range_start)
-      next
-    end
-
-    # Case 5: Range is in the middle of period (splits it)
-    if range_start > period_start && range_end < period_end
-      result << TimePeriod.new(period_start, range_start)
-      result << TimePeriod.new(range_end, period_end)
-    end
-  end
-
-  result
-end
-```
-
-**Why It's Problematic:**
-- High cyclomatic complexity (6+ decision points)
-- Difficult to verify correctness of each case
-- Hard to test individual overlap scenarios
-- Comments help but don't eliminate complexity
-- Long method violates Single Responsibility Principle
-
-**Refactoring Solution:**
-
-Extract each case into named private methods:
-
-```ruby
-def subtract_time_range(periods, range_start, range_end)
-  periods.flat_map do |period|
-    subtract_range_from_period(period, range_start, range_end)
-  end
-end
-
-private
-
-def subtract_range_from_period(period, range_start, range_end)
-  return [period] if no_overlap?(period, range_start, range_end)
-  return [] if complete_overlap?(period, range_start, range_end)
-  return [keep_end_portion(period, range_end)] if overlaps_start?(period, range_start, range_end)
-  return [keep_start_portion(period, range_start)] if overlaps_end?(period, range_start, range_end)
-  return split_period(period, range_start, range_end) if splits_period?(period, range_start, range_end)
-
-  []
-end
-
-# Case 1: No overlap
-def no_overlap?(period, range_start, range_end)
-  range_end <= period.start_time || range_start >= period.end_time
-end
-
-# Case 2: Range completely covers period
-def complete_overlap?(period, range_start, range_end)
-  range_start <= period.start_time && range_end >= period.end_time
-end
-
-# Case 3: Range overlaps the start
-def overlaps_start?(period, range_start, range_end)
-  range_start <= period.start_time &&
-    range_end > period.start_time &&
-    range_end < period.end_time
-end
-
-def keep_end_portion(period, range_end)
-  TimePeriod.new(range_end, period.end_time)
-end
-
-# Case 4: Range overlaps the end
-def overlaps_end?(period, range_start, range_end)
-  range_start > period.start_time &&
-    range_start < period.end_time &&
-    range_end >= period.end_time
-end
-
-def keep_start_portion(period, range_start)
-  TimePeriod.new(period.start_time, range_start)
-end
-
-# Case 5: Range splits the period
-def splits_period?(period, range_start, range_end)
-  range_start > period.start_time && range_end < period.end_time
-end
-
-def split_period(period, range_start, range_end)
-  [
-    TimePeriod.new(period.start_time, range_start),
-    TimePeriod.new(range_end, period.end_time)
-  ]
-end
-```
-
-**Benefits:**
-- Each case is independently testable
-- Clear naming makes logic self-documenting
-- Reduced cyclomatic complexity
-- Easier to verify correctness
-- Better separation of concerns
-
-**Testing Impact:**
-- Add individual tests for each case method
-- Easier to test edge cases
-- Update `test/services/availability_service_test.rb`
-
----
-
-#### 🟡 Issue 3.2: Complex Address Field Change Detection
-
-**File:** `app/models/office.rb:62-67`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 30 minutes
-
-**Problem:**
-Nested conditional logic for detecting address changes:
-
-**Current Code:**
-```ruby
-def address_fields_changed?
-  return false unless address_fields_present?
-
-  return true if new_record?
-
-  will_save_change_to_address? ||
-    will_save_change_to_city? ||
-    will_save_change_to_state? ||
-    will_save_change_to_zip_code?
-end
-```
-
-**Refactoring Solution:**
-
-```ruby
-def address_fields_changed?
-  return false unless address_fields_present?
-  return true if new_record?
-
-  any_address_field_changed?
-end
-
-private
-
-def any_address_field_changed?
-  ADDRESS_FIELDS.any? { |field| will_save_change_to_attribute?(field) }
-end
-
-# At the top of the class
-ADDRESS_FIELDS = %i[address city state zip_code].freeze
-```
-
-**Benefits:**
-- More maintainable (add fields to array, not to boolean expression)
-- Clearer intent
-- Easier to test
-
----
-
-### 4. Feature Envy
-
-#### ✅ Issue 4.1: AvailabilityService Accessing Appointment Internals [RESOLVED]
-
-**File:** `app/services/availability_service.rb:104-118`
-**Status:** ✅ **RESOLVED** (December 2025)
-**Severity:** 🟡 Medium
-**Effort to Fix:** 2-3 hours (completed)
-
-**Problem:**
-AvailabilityService was directly accessing Appointment's time calculation methods (`start_time`, `end_time`), creating tight coupling between the service and model internals.
-
-**Solution Implemented:**
-Appointment now provides a `time_range` method returning a `TimePeriod` value object, and the service uses `PeriodSubtractorService` for clean separation of concerns:
-
-```ruby
-# app/models/appointment.rb
-def time_range
-  TimePeriod.new(start_time: start_time, end_time: end_time)
-end
-
-# app/services/availability_service.rb
-def subtract_appointments_from_periods(periods, appointments)
-  available = periods.dup
-
-  appointments.each do |appointment|
-    available = PeriodSubtractorService.call(available, appointment.time_range)
-  end
-
-  available
-end
-```
-
-**Benefits Achieved:**
-- ✅ Reduced coupling - AvailabilityService no longer knows about Appointment's internal time calculation
-- ✅ Encapsulation - Appointment owns its time logic in one place
-- ✅ Testability - Time range logic tested independently (see `test/models/appointment_test.rb:283-313`)
-- ✅ Maintainability - Changes to time calculation only affect Appointment model
-- ✅ Reusability - TimePeriod value object used across multiple services
-
-**Related Files:**
-- `app/models/appointment.rb` - Provides `time_range` method (lines 41-59)
-- `app/values/time_period.rb` - Immutable value object using Ruby's `Data.define`
-- `app/services/period_subtractor_service.rb` - Handles complex subtraction logic
-- `test/models/appointment_test.rb` - Tests time_range behavior (lines 283-313)
-- `test/services/availability_service_test.rb` - Integration tests (350 lines)
-
----
-
-#### ✅ Issue 4.2: SlotGenerator Accessing WorkSchedule Internals [RESOLVED]
-
-**File:** `app/services/slot_generator.rb:39-71`
-**Status:** ✅ **RESOLVED** (December 2025)
-**Severity:** 🟡 Medium
-**Effort to Fix:** 2-3 hours (completed)
-
-**Problem:**
-SlotGenerator was directly accessing multiple WorkSchedule attributes (`appointment_duration_minutes`, `buffer_minutes_between_appointments`, `periods_for_date`), creating tight coupling and exposing internal structure.
-
-**Solution Implemented:**
-WorkSchedule now provides a `slot_configuration_for_date` method returning a `SlotConfiguration` value object that bundles all necessary parameters:
-
-```ruby
-# app/models/work_schedule.rb
-def slot_configuration_for_date(date)
-  SlotConfiguration.new(
-    duration: appointment_duration_minutes.minutes,
-    buffer: buffer_minutes_between_appointments.minutes,
-    periods: periods_for_date(date)
-  )
-end
-
-# app/values/slot_configuration.rb
-SlotConfiguration = Data.define(:duration, :buffer, :periods) do
-  def total_slot_duration
-    duration + buffer
-  end
-end
-
-# app/services/slot_generator.rb
-def generate_slots_for_day(date, work_schedule)
-  return [] unless work_schedule
-
-  config = work_schedule.slot_configuration_for_date(date)
-  generate_slots_from_periods(config.periods, config.total_slot_duration, date)
-end
-```
-
-**Benefits Achieved:**
-- ✅ Reduced coupling - SlotGenerator doesn't know about WorkSchedule's internal structure
-- ✅ Encapsulation - WorkSchedule owns its configuration logic
-- ✅ Single responsibility - SlotConfiguration bundles related data cohesively
-- ✅ Testability - Configuration logic tested independently (see `test/models/work_schedule_test.rb:246-292`)
-- ✅ Maintainability - Changes to WorkSchedule attributes only affect WorkSchedule
-- ✅ Type safety - Value object provides clear contract for data exchange
-
-**Related Files:**
-- `app/models/work_schedule.rb` - Provides `slot_configuration_for_date` method (lines 57-79)
-- `app/values/slot_configuration.rb` - Immutable value object using Ruby's `Data.define`
-- `app/services/slot_generator.rb` - Uses SlotConfiguration (lines 39-71)
-- `test/models/work_schedule_test.rb` - Tests slot_configuration_for_date (lines 246-292)
-- `test/services/slot_generator_test.rb` - Integration tests (112 lines)
-
----
-
-**Feature Envy Summary:**
-- **Total Issues Identified:** 2
-- **Resolved:** 2 (100%)
-- **Pattern Used:** Value Objects with Ruby's `Data.define`
-- **Impact:** Significantly improved encapsulation, reduced coupling, enhanced maintainability
-
----
-
-### 5. Magic Numbers & Strings
-
-#### 🟡 Issue 5.1: Magic Duration and Buffer Values
-
-**File:** `app/models/work_schedule_collection.rb:150-151, 181-186`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 30 minutes
-
-**Problem:**
-Hardcoded values scattered throughout the code:
-
-**Current Code:**
-```ruby
-# Line 150-151
-appointment_duration_minutes: parsed_duration || 50,
-buffer_minutes_between_appointments: parsed_buffer || 10,
-
-# Line 181-186
-def default_params_for_day(day_number)
-  {
-    "is_open" => "0",
-    "work_periods" => [{ "start" => "09:00", "end" => "17:00" }],
-    "appointment_duration_minutes" => "50",
-    "buffer_minutes_between_appointments" => "10"
-  }
-end
-```
-
-**Why It's Problematic:**
-- Same values duplicated in multiple locations
-- Business logic hidden in magic numbers
-- Difficult to change defaults application-wide
-- No context for why these values were chosen
-
-**Refactoring Solution:**
-
-```ruby
-# At the top of the class
-module Defaults
-  APPOINTMENT_DURATION_MINUTES = 50  # Standard therapy/consultation session
-  BUFFER_MINUTES = 10                # Buffer time for room preparation
-  OPENING_TIME = "09:00"             # Standard business hours start
-  CLOSING_TIME = "17:00"             # Standard business hours end
-  FORM_CHECKED_VALUE = "1"           # Rails checkbox checked value
-  FORM_UNCHECKED_VALUE = "0"         # Rails checkbox unchecked value
-end
-
-# Use throughout the class
-appointment_duration_minutes: parsed_duration || Defaults::APPOINTMENT_DURATION_MINUTES,
-buffer_minutes_between_appointments: parsed_buffer || Defaults::BUFFER_MINUTES,
-
-def default_params_for_day(day_number)
-  {
-    "is_open" => Defaults::FORM_UNCHECKED_VALUE,
-    "work_periods" => [
-      { "start" => Defaults::OPENING_TIME, "end" => Defaults::CLOSING_TIME }
-    ],
-    "appointment_duration_minutes" => Defaults::APPOINTMENT_DURATION_MINUTES.to_s,
-    "buffer_minutes_between_appointments" => Defaults::BUFFER_MINUTES.to_s
-  }
-end
-```
-
-**Benefits:**
-- Single source of truth for default values
-- Documentation of why values were chosen
-- Easy to change defaults application-wide
-- More maintainable
-
----
-
-#### 🟡 Issue 5.2: Magic String for Form Checkbox Value
-
-**File:** `app/models/work_schedule_collection.rb:133, 226`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 15 minutes
-
-**Problem:**
-String `"1"` used as magic value for checkbox state:
-
-**Current Code:**
-```ruby
-is_open: day_params[:is_open] == "1"
-```
-
-**Refactoring Solution:**
-
-```ruby
-# Use constant from above
-is_open: day_params[:is_open] == Defaults::FORM_CHECKED_VALUE
-
-# Or better, normalize in controller:
-# In controller, convert string to boolean before passing to form object
-params[:schedule][:days].each do |day_number, day_data|
-  day_data[:is_open] = ActiveModel::Type::Boolean.new.cast(day_data[:is_open])
-end
-
-# Then in WorkScheduleCollection, use boolean directly:
-is_open: day_params[:is_open]
-```
-
----
-
-### 6. N+1 Query Risks
-
-#### 🟡 Issue 6.1: In-Memory Grouping in Dashboard Controller
-
-**File:** `app/controllers/providers/dashboard_controller.rb:15-19`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 1-2 hours
-
-**Problem:**
-Appointments are loaded with eager loading but then grouped in memory:
-
-**Current Code:**
-```ruby
-def index
-  @pending_appointments = current_user.provider_appointments
-                                      .pending
-                                      .includes(:customer, :office)
-                                      .limit(20)
-
-  @upcoming_appointments = current_user.provider_appointments
-                                       .upcoming
-                                       .includes(:customer, :office)
-                                       .limit(20)
-
-  @appointments_by_date = @upcoming_appointments.group_by do |appointment|
-    appointment.scheduled_at.to_date
+  closing_minutes = closing_time.hour * 60 + closing_time.min
+  available_minutes = closing_minutes - opening_minutes
+
+  if available_minutes < slot_duration_minutes
+    errors.add(:slot_duration_minutes,
+               "is too long for the available work hours (#{available_minutes} minutes available)")
   end
 end
 ```
 
-**Why It's Problematic:**
-- `includes` is performed, but grouping happens in Ruby
-- If view accesses associations beyond `:customer` and `:office`, N+1 queries occur
-- Business logic (grouping) in controller
-- If other views need same grouping, must duplicate code
+**Problem Analysis**:
+- Manual time-to-minutes conversion: `opening_time.hour * 60 + opening_time.min`
+- WorkSchedule already includes `TimeParsing` concern (line 5)
+- `TimeParsing` has methods like `parse_time` and time manipulation utilities
+- Duplicating this logic makes it harder to maintain time-handling consistency
+- If time conversion logic needs to change, it must be updated in multiple places
 
-**Refactoring Solution:**
+**Proposed Solution**:
 
-Create a presenter to encapsulate the data structure:
+Extract time conversion to use `TimeParsing` module methods or create a new helper method within TimeParsing.
 
+**Implementation Steps**:
+1. **Review TimeParsing concern** - 30 minutes
+   - Check existing methods in `app/models/concerns/time_parsing.rb`
+   - Determine if a `time_to_minutes` helper exists or should be added
+
+2. **Add time_to_minutes helper to TimeParsing** - 1 hour
+   ```ruby
+   # File: app/models/concerns/time_parsing.rb
+   module TimeParsing
+     # ... existing code ...
+
+     # Convert a Time object to total minutes since midnight
+     # @param time [Time, nil] The time to convert
+     # @return [Integer, nil] Total minutes or nil if time is nil
+     def time_to_minutes(time)
+       return nil unless time
+       time.hour * 60 + time.min
+     end
+
+     # Calculate minutes between two times
+     # @param start_time [Time] Start time
+     # @param end_time [Time] End time
+     # @return [Integer] Minutes between times
+     def minutes_between(start_time, end_time)
+       time_to_minutes(end_time) - time_to_minutes(start_time)
+     end
+   end
+   ```
+
+3. **Refactor WorkSchedule validation** - 30 minutes
+   ```ruby
+   # File: app/models/work_schedule.rb
+   def work_day_must_accommodate_at_least_one_slot
+     return unless opening_time && closing_time && slot_duration_minutes
+
+     available_minutes = minutes_between(opening_time, closing_time)
+
+     if available_minutes < slot_duration_minutes
+       errors.add(:slot_duration_minutes,
+                  "is too long for the available work hours (#{available_minutes} minutes available)")
+     end
+   end
+   ```
+
+4. **Update tests** - 1 hour
+   - Add tests for new TimeParsing helper methods
+   - Verify WorkSchedule validation still works correctly
+   - Test edge cases (midnight crossing, invalid times)
+
+**Better Code Example**:
 ```ruby
-# app/presenters/appointments_presenter.rb
-class AppointmentsPresenter
-  def initialize(appointments)
-    @appointments = appointments
-  end
+# BEFORE (manual conversion):
+def work_day_must_accommodate_at_least_one_slot
+  return unless opening_time && closing_time && slot_duration_minutes
 
-  def grouped_by_date
-    @appointments.group_by { |appointment| appointment.scheduled_at.to_date }
-  end
-
-  def pending_count
-    @appointments.count(&:pending?)
-  end
+  opening_minutes = opening_time.hour * 60 + opening_time.min
+  closing_minutes = closing_time.hour * 60 + closing_time.min
+  available_minutes = closing_minutes - opening_minutes
+  # ...
 end
 
-# In controller
-def index
-  @pending_appointments = load_pending_appointments
-  @upcoming_appointments = load_upcoming_appointments
-  @appointments_presenter = AppointmentsPresenter.new(@upcoming_appointments)
-end
-
-private
-
-def load_pending_appointments
-  current_user.provider_appointments
-              .pending
-              .includes(:customer, :office)
-              .order(scheduled_at: :asc)
-              .limit(20)
-end
-
-def load_upcoming_appointments
-  current_user.provider_appointments
-              .upcoming
-              .includes(:customer, :office)
-              .order(scheduled_at: :asc)
-              .limit(20)
-end
-
-# In view
-<% @appointments_presenter.grouped_by_date.each do |date, appointments| %>
-  ...
-<% end %>
-```
-
-**Benefits:**
-- Business logic moved out of controller
-- Reusable presenter for other views
-- Clearer controller responsibilities
-- Easier to test grouping logic
-- Explicit about what associations are loaded
-
----
-
-### 7. Callback Overuse
-
-#### 🟡 Issue 7.1: Appointment Duration Set in Callback
-
-**File:** `app/models/appointment.rb:32, 61-75`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 2-3 hours
-
-**Problem:**
-`before_save` callback silently sets duration from work schedule:
-
-**Current Code:**
-```ruby
-class Appointment < ApplicationRecord
-  before_save :set_duration_from_work_schedule
-
-  private
-
-  def set_duration_from_work_schedule
-    return if duration_minutes.present?
-    return unless provider && office && scheduled_at
-
-    work_schedule = provider.work_schedules
-                            .active
-                            .find_by(
-                              office: office,
-                              day_of_week: scheduled_at.wday
-                            )
-
-    if work_schedule
-      self.duration_minutes = work_schedule.appointment_duration_minutes
-    else
-      self.duration_minutes = DEFAULT_DURATION_MINUTES
-    end
-  end
-end
-```
-
-**Why It's Problematic:**
-- Hidden side effects make code hard to understand
-- Callback fires on every save, even when duration already set
-- If work_schedule is deleted after appointment created, behavior is unclear
-- Makes testing more complex
-- Callbacks create implicit dependencies
-
-**Refactoring Solution:**
-
-Make duration setting explicit in controller/form object:
-
-```ruby
-# Remove callback from model
-
-# In app/services/appointment_builder.rb
-class AppointmentBuilder
-  def initialize(provider:, office:, customer:, scheduled_at:)
-    @provider = provider
-    @office = office
-    @customer = customer
-    @scheduled_at = scheduled_at
-  end
-
-  def build
-    Appointment.new(
-      provider: @provider,
-      office: @office,
-      customer: @customer,
-      scheduled_at: @scheduled_at,
-      duration_minutes: calculate_duration
-    )
-  end
-
-  private
-
-  def calculate_duration
-    work_schedule = @provider.work_schedules
-                             .active
-                             .find_by(office: @office, day_of_week: @scheduled_at.wday)
-
-    work_schedule&.appointment_duration_minutes || Appointment::DEFAULT_DURATION_MINUTES
-  end
-end
-
-# In controller
-def create
-  appointment = AppointmentBuilder.new(
-    provider: @provider,
-    office: @office,
-    customer: current_user,
-    scheduled_at: params[:scheduled_at]
-  ).build
-
-  if appointment.save
-    redirect_to appointment, notice: "Appointment created."
-  else
-    render :new
-  end
-end
-```
-
-**Benefits:**
-- Explicit duration setting
-- Easier to test
-- No hidden side effects
-- Clearer code flow
-- Service object is reusable
-
-**Testing Impact:**
-- Create `test/services/appointment_builder_test.rb`
-- Update `test/models/appointment_test.rb` to remove callback tests
-- Update `test/controllers/appointments_controller_test.rb`
-
----
-
-#### 🟡 Issue 7.2: CPF Normalization in Callback
-
-**File:** `app/models/user.rb:21, 68-70`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 1 hour
-
-**Problem:**
-`before_validation` callback modifies user input:
-
-**Current Code:**
-```ruby
-before_validation :normalize_cpf
-
-private
-
-def normalize_cpf
-  self.cpf = cpf.gsub(/\D/, "") if cpf.present?
-end
-```
-
-**Why It's Problematic:**
-- Input modification happens silently
-- Users don't see the normalized value until after save
-- Makes it unclear that spaces/dashes are stripped
-- Business logic hidden in callback
-
-**Refactoring Solution:**
-
-Normalize in controller or use a virtual attribute:
-
-```ruby
-# Option 1: Normalize in controller
-def user_params
-  params.require(:user).permit(:cpf, :first_name, :last_name, ...).tap do |user_params|
-    user_params[:cpf] = user_params[:cpf]&.gsub(/\D/, "")
-  end
-end
-
-# Option 2: Virtual attribute (better UX)
-class User < ApplicationRecord
-  # Remove before_validation callback
-
-  # Store normalized value
-  def cpf=(value)
-    super(value&.gsub(/\D/, ""))
-  end
-
-  # Display formatted value
-  def cpf_formatted
-    return unless cpf
-    cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4')
-  end
-end
-```
-
-**Benefits:**
-- Explicit normalization
-- Better UX (can display formatted CPF)
-- Clearer code
-- No hidden callbacks
-
----
-
-### 8. Naming Inconsistencies
-
-#### 🟡 Issue 8.1: Inconsistent Duration Attribute Naming
-
-**Files:**
-- `app/models/appointment.rb` (uses `duration_minutes`)
-- `app/models/work_schedule.rb` (uses `appointment_duration_minutes`)
-
-**Severity:** 🟡 Medium
-**Effort to Fix:** 2-3 hours (due to migration)
-
-**Problem:**
-Confusing naming between models:
-
-**Current Code:**
-```ruby
-# Appointment
-appointment.duration_minutes
-
-# WorkSchedule
-work_schedule.appointment_duration_minutes
-work_schedule.buffer_minutes_between_appointments
-```
-
-**Why It's Problematic:**
-- `appointment_duration_minutes` on WorkSchedule is confusing (it's not an appointment)
-- Inconsistent naming makes code harder to understand
-- Creates confusion when reading code
-
-**Refactoring Solution:**
-
-Rename WorkSchedule attributes for clarity:
-
-```ruby
-# Migration
-class RenameWorkScheduleDurationColumns < ActiveRecord::Migration[8.1]
-  def change
-    rename_column :work_schedules, :appointment_duration_minutes, :slot_duration_minutes
-    rename_column :work_schedules, :buffer_minutes_between_appointments, :slot_buffer_minutes
-  end
-end
-
-# Updated WorkSchedule model
-class WorkSchedule < ApplicationRecord
-  # Now clearer that these are slot templates, not actual appointments
-  validates :slot_duration_minutes, presence: true, numericality: { greater_than: 0 }
-  validates :slot_buffer_minutes, presence: true, numericality: { greater_than_or_equal_to: 0 }
-end
-```
-
-**Benefits:**
-- Clearer distinction between template (WorkSchedule) and instance (Appointment)
-- More intuitive naming
-- Easier for new developers to understand
-
-**Testing Impact:**
-- Update all tests referencing the old attribute names
-- Update fixtures with new column names
-
----
-
-#### 🟡 Issue 8.2: Instance Method Wrapping Class Method
-
-**File:** `app/models/concerns/time_parsing.rb:10-12`
-**Severity:** 🟢 Low
-**Effort to Fix:** 30 minutes
-
-**Problem:**
-Instance method just delegates to class method:
-
-**Current Code:**
-```ruby
-module TimeParsing
-  def parse_time_to_minutes(time_string)
-    TimeParsing.parse_time_to_minutes(time_string)
-  end
-
-  def self.parse_time_to_minutes(time_string)
-    # Implementation
-  end
-end
-```
-
-**Why It's Problematic:**
-- Confusing when to use instance vs class method
-- Unnecessary wrapper
-- Adds cognitive overhead
-
-**Refactoring Solution:**
-
-Remove instance method, use class method directly:
-
-```ruby
-module TimeParsing
-  # Remove instance method wrapper
-
-  def self.parse_time_to_minutes(time_string)
-    # Implementation
-  end
-
-  # Add convenience method for including classes if needed
-  def time_to_minutes(time_string)
-    TimeParsing.parse_time_to_minutes(time_string)
-  end
-end
-
-# Usage
-TimeParsing.parse_time_to_minutes("09:30")  # Direct class method call
-```
-
----
-
-### 9. Missing Error Handling
-
-#### 🟡 Issue 9.1: AvailabilityService Silent Failures
-
-**File:** `app/services/availability_service.rb:28-40`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 1 hour
-
-**Problem:**
-Returns empty array without logging or indication:
-
-**Current Code:**
-```ruby
-def available_periods
-  return [] unless work_schedule
-
-  work_periods = work_schedule.periods_for_date(date)
-  return [] if work_periods.empty?
-
+# AFTER (using concern):
+def work_day_must_accommodate_at_least_one_slot
+  return unless opening_time && closing_time && slot_duration_minutes
+
+  available_minutes = minutes_between(opening_time, closing_time)
   # ...
 end
 ```
 
-**Why It's Problematic:**
-- Can't distinguish between "no availability" and "not configured"
-- Makes debugging difficult
-- Silent failures hide configuration issues
+**Affected Files**:
+- `app/models/concerns/time_parsing.rb` - Add helper methods
+- `app/models/work_schedule.rb` - Refactor validation to use helpers
+- `test/models/concerns/time_parsing_test.rb` - Add tests for new helpers
+- `test/models/work_schedule_test.rb` - Verify validation still works
 
-**Refactoring Solution:**
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
 
-Add logging and consider raising specific exceptions:
-
-```ruby
-def available_periods
-  unless work_schedule
-    Rails.logger.warn(
-      "No work schedule found for provider #{provider.id}, " \
-      "office #{office.id}, date #{date}"
-    )
-    return []
-  end
-
-  work_periods = work_schedule.periods_for_date(date)
-  if work_periods.empty?
-    Rails.logger.info(
-      "No work periods configured for provider #{provider.id} on #{date.strftime('%A')}"
-    )
-    return []
-  end
-
-  # ... continue with calculation
-end
-
-# Alternative: Use result object pattern
-class AvailabilityResult
-  attr_reader :periods, :error
-
-  def initialize(periods: [], error: nil)
-    @periods = periods
-    @error = error
-  end
-
-  def success?
-    error.nil?
-  end
-end
-
-def available_periods
-  return AvailabilityResult.new(error: :no_schedule) unless work_schedule
-
-  work_periods = work_schedule.periods_for_date(date)
-  return AvailabilityResult.new(error: :no_periods) if work_periods.empty?
-
-  AvailabilityResult.new(periods: calculated_periods)
-end
-```
-
-**Benefits:**
-- Better debugging
-- Explicit error states
-- Logging helps production troubleshooting
-- Clearer intent
+**References**:
+- [Rails Concerns Guide](https://api.rubyonrails.org/classes/ActiveSupport/Concern.html)
+- [Refactoring: Extracting Methods](https://refactoring.com/catalog/extractMethod.html)
 
 ---
 
-#### 🟡 Issue 9.2: Broad Exception Catching
+### H3: Inefficient Time Duration Calculation in AvailabilityService
 
-**File:** `app/services/weekly_availability_calculator.rb:43-56`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 15 minutes
+**Category**: Performance / Code Quality
+**Effort**: ⏱️ Quick (~1 hour)
+**Impact**: Verbose code with manual calculations when simpler alternatives exist
 
-**Problem:**
-Catches all `StandardError` and loses context:
+**Description**:
+The `total_available_minutes` method in AvailabilityService manually iterates through periods, converts times, and sums durations. This is inefficient and verbose when the `TimePeriod` value object already provides a `duration` method that returns seconds.
 
-**Current Code:**
+**Evidence**:
 ```ruby
-def call
+# File: app/services/availability_service.rb:54-68
+def total_available_minutes
+  total = 0
+  available_periods.each do |period|
+    next unless period.start_time && period.end_time
+
+    # Convert to time objects and calculate difference in seconds
+    start_time = period.start_time.to_time
+    end_time = period.end_time.to_time
+    seconds = end_time.to_f - start_time.to_f
+    minutes = (seconds / 60).to_i
+    total += minutes
+  end
+  total
+end
+```
+
+**Problem Analysis**:
+- Verbose iteration with accumulator pattern when Ruby's `sum` is more idiomatic
+- Manual time arithmetic (`end_time.to_f - start_time.to_f`)
+- Variable name collision: `start_time` and `end_time` are both method parameters and local variables
+- TimePeriod already has `duration` method (returns duration in seconds)
+- Converting seconds to minutes manually with magic number `60`
+
+**Proposed Solution**:
+
+Simplify to use `sum` with TimePeriod's `duration` method.
+
+**Implementation Steps**:
+1. **Verify TimePeriod has duration method** - 10 minutes
+   - Check `app/values/time_period.rb` for `duration` method
+   - Confirm it returns seconds (based on standard Ruby Time behavior)
+
+2. **Refactor to use sum** - 20 minutes
+   ```ruby
+   # File: app/services/availability_service.rb
+   def total_available_minutes
+     available_periods
+       .compact # Remove nil periods
+       .sum { |period| (period.duration / 60).to_i }
+   end
+   ```
+
+3. **Alternative: Extract constant for magic number** - 10 minutes
+   ```ruby
+   # At top of file or in a constants module
+   SECONDS_PER_MINUTE = 60
+
+   def total_available_minutes
+     available_periods
+       .compact
+       .sum { |period| (period.duration / SECONDS_PER_MINUTE).to_i }
+   end
+   ```
+
+4. **Update tests** - 20 minutes
+   - Verify existing tests still pass
+   - Add edge case test for empty periods
+   - Add test for nil period handling
+
+**Better Code Example**:
+```ruby
+# BEFORE (15 lines, verbose):
+def total_available_minutes
+  total = 0
+  available_periods.each do |period|
+    next unless period.start_time && period.end_time
+    start_time = period.start_time.to_time
+    end_time = period.end_time.to_time
+    seconds = end_time.to_f - start_time.to_f
+    minutes = (seconds / 60).to_i
+    total += minutes
+  end
+  total
+end
+
+# AFTER (3 lines, clear intent):
+SECONDS_PER_MINUTE = 60
+
+def total_available_minutes
+  available_periods.sum { |period| (period.duration / SECONDS_PER_MINUTE).to_i }
+end
+```
+
+**Affected Files**:
+- `app/services/availability_service.rb` - Refactor `total_available_minutes` method
+- `test/services/availability_service_test.rb` - Verify tests pass
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+- Related: H2 (both involve time calculation simplification)
+
+**References**:
+- [Ruby Enumerable#sum](https://ruby-doc.org/core-3.1.0/Enumerable.html#method-i-sum)
+- [TimePeriod value object documentation](./app/values/time_period.rb)
+
+---
+
+### H4: Database Query in Appointment before_save Callback
+
+**Category**: Performance / Testing
+**Effort**: ⏱️⏱️⏱️ Large (~6 hours)
+**Impact**: Executes database query on every save, making tests slower and complicating logic
+
+**Description**:
+The Appointment model has a `before_save` callback that queries the database to find the provider's work schedule and set the appointment duration. This runs on every save (not just create), executes a potentially slow query, and makes the model harder to test because callbacks always fire.
+
+**Evidence**:
+```ruby
+# File: app/models/appointment.rb:32
+before_save :set_duration_from_work_schedule
+
+def set_duration_from_work_schedule
+  return unless provider && office && scheduled_at
+
+  work_schedule = WorkSchedule
+    .active
+    .for_provider(provider_id)
+    .for_office(office_id)
+    .for_day(scheduled_at.wday)
+    .first
+
+  if work_schedule
+    total_minutes = work_schedule.slot_duration_minutes + work_schedule.slot_buffer_minutes
+    self.duration_minutes = total_minutes
+  else
+    self.duration_minutes = DEFAULT_DURATION_MINUTES
+  end
+end
+```
+
+**Problem Analysis**:
+- Database query executes on **every save**, not just when duration should change
+- Callback runs even when updating unrelated fields (status, notes, etc.)
+- Tight coupling to WorkSchedule makes testing harder
+- Callbacks always fire, can't be easily disabled in tests
+- Query could be expensive with complex WorkSchedule scopes
+- No caching of work schedule lookup
+
+**Real-World Impact**:
+```ruby
+# Every time you update an appointment, it queries work schedules:
+appointment.update(status: :confirmed)  # ⚠️ Unnecessarily queries WorkSchedule!
+
+# In tests, you must stub WorkSchedule queries or create full fixtures:
+appointment = Appointment.create(...)  # Must have WorkSchedule in DB
+```
+
+**Proposed Solution**:
+
+Move duration setting to a service object or explicit setter method. Only set duration on creation, not every update.
+
+**Option 1: Service Object** (Recommended - 5 hours)
+```ruby
+# File: app/services/create_appointment_service.rb
+class CreateAppointmentService
+  def initialize(appointment_params, provider:, office:)
+    @params = appointment_params
+    @provider = provider
+    @office = office
+  end
+
+  def call
+    appointment = Appointment.new(@params.merge(
+      provider: @provider,
+      office: @office
+    ))
+
+    set_duration(appointment) if appointment.duration_minutes.blank?
+
+    appointment.save ? Result.success(appointment) : Result.failure(appointment.errors)
+  end
+
+  private
+
+  def set_duration(appointment)
+    work_schedule = find_work_schedule(appointment)
+
+    appointment.duration_minutes = if work_schedule
+      work_schedule.slot_duration_minutes + work_schedule.slot_buffer_minutes
+    else
+      Appointment::DEFAULT_DURATION_MINUTES
+    end
+  end
+
+  def find_work_schedule(appointment)
+    WorkSchedule
+      .active
+      .for_provider(@provider.id)
+      .for_office(@office.id)
+      .for_day(appointment.scheduled_at.wday)
+      .first
+  end
+end
+```
+
+**Option 2: before_create instead of before_save** (Simpler - 3 hours)
+```ruby
+# File: app/models/appointment.rb
+# Change from before_save to before_create
+before_create :set_duration_from_work_schedule, if: :duration_minutes_blank?
+
+def duration_minutes_blank?
+  duration_minutes.blank?
+end
+
+# Keep the existing set_duration_from_work_schedule method
+```
+
+**Implementation Steps**:
+
+**For Option 1 (Service Object):**
+1. **Create service object** - 2 hours
+   - Create `app/services/create_appointment_service.rb`
+   - Implement duration-setting logic
+   - Create simple Result object for success/failure
+
+2. **Update controllers** - 2 hours
+   - Replace `Appointment.create` with `CreateAppointmentService.new(...).call`
+   - Update error handling to use Result object
+   - Update customer appointment creation flow
+
+3. **Remove callback from model** - 30 minutes
+   - Remove `before_save :set_duration_from_work_schedule`
+   - Keep method as a public method for manual use if needed
+
+4. **Update tests** - 1.5 hours
+   - Create service object tests
+   - Update controller tests to expect service usage
+   - Simplify model tests (no need to stub WorkSchedule)
+
+**For Option 2 (before_create):**
+1. **Change callback** - 15 minutes
+   - Replace `before_save` with `before_create`
+   - Add conditional to skip if duration already set
+
+2. **Update tests** - 1 hour
+   - Verify callback only runs on create, not update
+   - Test that manual duration setting is respected
+   - Test fallback to default duration
+
+3. **Add documentation** - 15 minutes
+   - Document why before_create is used
+   - Explain when duration is auto-set vs manual
+
+**Better Code Example**:
+```ruby
+# BEFORE (runs on every save):
+appointment.update(status: :confirmed)  # ⚠️ Queries WorkSchedule unnecessarily
+
+# AFTER - Option 1 (Service Object):
+result = CreateAppointmentService.new(
+  appointment_params,
+  provider: current_user,
+  office: @office
+).call
+
+if result.success?
+  @appointment = result.appointment
+  redirect_to @appointment
+else
+  render :new
+end
+
+# AFTER - Option 2 (before_create):
+appointment.update(status: :confirmed)  # ✅ No callback fires, just updates status
+```
+
+**Affected Files**:
+- **Option 1**:
+  - `app/services/create_appointment_service.rb` - **CREATE THIS FILE**
+  - `app/models/appointment.rb` - Remove before_save callback
+  - `app/controllers/customers/appointments_controller.rb` - Use service
+  - `test/services/create_appointment_service_test.rb` - **CREATE THIS FILE**
+
+- **Option 2**:
+  - `app/models/appointment.rb` - Change callback from before_save to before_create
+  - `test/models/appointment_test.rb` - Update tests
+
+**Dependencies**:
+- Blocks: None (but makes testing easier for other features)
+- Blocked by: None
+- Consider: This relates to the broader pattern of keeping models thin
+
+**References**:
+- [Rails Callbacks Guide](https://guides.rubyonrails.org/active_record_callbacks.html)
+- [Service Objects in Rails](https://www.toptal.com/ruby-on-rails/rails-service-objects-tutorial)
+- [When to avoid callbacks](https://samuelmullen.com/articles/guidelines-for-using-activerecord-callbacks/)
+
+---
+
+## Medium Priority Issues
+
+### M1: Fat Model - WorkScheduleCollection
+
+**Category**: Maintainability
+**Effort**: ⏱️⏱️⏱️ Large (~8 hours)
+**Impact**: 172-line form object still has multiple responsibilities
+
+**Description**:
+While WorkScheduleCollection has been significantly improved through recent refactoring (decomposed from 242 lines to 172 lines with service extraction), it still has room for simplification. The class mixes form object responsibilities with schedule lookup and error aggregation logic.
+
+**Evidence**:
+```ruby
+# File: app/models/work_schedule_collection.rb (172 lines total)
+class WorkScheduleCollection
+  include ActiveModel::Model
+
+  # Multiple responsibilities:
+  # 1. Form object interface (lines 7-25)
+  # 2. Validation aggregation (lines 64-84)
+  # 3. Schedule lookup/access (lines 86-100)
+  # 4. Params parsing coordination (lines 104-118)
+  # 5. Update logic (lines 129-149)
+  # 6. Service delegation (lines 151-171)
+end
+```
+
+**Problem Analysis**:
+- 172 lines for a "coordinator" class is still quite large
+- Private methods doing work instead of just delegating (e.g., `update_schedules_from_params`)
+- `update_schedules_from_params` (lines 133-149) has business logic about attribute assignment
+- Mixes class methods (`self.load_schedules`) with instance methods
+- Error aggregation logic (lines 72-80) could be extracted
+
+**Proposed Solution**:
+
+Further decompose by extracting error aggregation and schedule updating into separate classes.
+
+**Implementation Steps**:
+1. **Create ScheduleErrorAggregator** - 2 hours
+   ```ruby
+   # File: app/services/schedule_error_aggregator.rb
+   class ScheduleErrorAggregator
+     def initialize(schedules)
+       @schedules = schedules
+     end
+
+     def aggregate_errors
+       errors = ActiveModel::Errors.new(self)
+       open_schedules = @schedules.select(&:is_active?)
+
+       open_schedules.each do |schedule|
+         next if schedule.errors.empty?
+
+         day_name = schedule.day_name
+         schedule.errors.full_messages.each do |message|
+           errors.add(:base, "#{day_name}: #{message}")
+         end
+       end
+
+       errors
+     end
+   end
+   ```
+
+2. **Create ScheduleUpdater service** - 2 hours
+   ```ruby
+   # File: app/services/schedule_updater.rb
+   class ScheduleUpdater
+     def initialize(current_schedules, new_params, office:, provider:)
+       @current_schedules = current_schedules
+       @new_params = new_params
+       @office = office
+       @provider = provider
+     end
+
+     def update
+       parser = SchedulesFormDataParser.new(params: @new_params, office: @office, provider: @provider)
+       updated_schedules = parser.parse
+
+       @current_schedules.each_with_index do |schedule, index|
+         updated_schedule = updated_schedules[index]
+         schedule.assign_attributes(
+           is_active: updated_schedule.is_active,
+           work_periods: updated_schedule.work_periods,
+           slot_duration_minutes: updated_schedule.slot_duration_minutes,
+           slot_buffer_minutes: updated_schedule.slot_buffer_minutes,
+           opening_time: updated_schedule.opening_time,
+           closing_time: updated_schedule.closing_time
+         )
+       end
+
+       @current_schedules
+     end
+   end
+   ```
+
+3. **Simplify WorkScheduleCollection** - 3 hours
+   - Remove error aggregation logic, delegate to ScheduleErrorAggregator
+   - Remove update logic, delegate to ScheduleUpdater
+   - Result: Reduce to ~100 lines of pure coordination code
+
+4. **Update tests** - 1 hour
+   - Create tests for ScheduleErrorAggregator
+   - Create tests for ScheduleUpdater
+   - Update WorkScheduleCollection tests to verify delegation
+
+**Better Code Example**:
+```ruby
+# BEFORE (172 lines with mixed responsibilities):
+class WorkScheduleCollection
+  def valid?
+    open_schedules = schedules.select(&:is_active?)
+    is_valid = open_schedules.all?(&:valid?)
+
+    unless is_valid
+      open_schedules.each do |schedule|
+        # ... 8 lines of error aggregation logic
+      end
+    end
+    is_valid
+  end
+end
+
+# AFTER (~100 lines, pure coordination):
+class WorkScheduleCollection
+  def valid?
+    open_schedules = schedules.select(&:is_active?)
+    is_valid = open_schedules.all?(&:valid?)
+
+    unless is_valid
+      aggregated_errors = ScheduleErrorAggregator.new(open_schedules).aggregate_errors
+      errors.merge!(aggregated_errors)
+    end
+
+    is_valid
+  end
+end
+```
+
+**Affected Files**:
+- `app/services/schedule_error_aggregator.rb` - **CREATE THIS FILE**
+- `app/services/schedule_updater.rb` - **CREATE THIS FILE**
+- `app/models/work_schedule_collection.rb` - Simplify by delegating
+- `test/services/schedule_error_aggregator_test.rb` - **CREATE THIS FILE**
+- `test/services/schedule_updater_test.rb` - **CREATE THIS FILE**
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+- Note: This is an optimization, not a critical issue. The current code works well.
+
+---
+
+### M2: Missing Database Indexes
+
+**Category**: Performance
+**Effort**: ⏱️ Quick (~1.5 hours)
+**Impact**: Slower queries as data grows, especially for filtered lists
+
+**Description**:
+Several columns are frequently queried but lack dedicated indexes. While some compound indexes exist, single-column indexes on frequently filtered fields would improve query performance.
+
+**Evidence**:
+```ruby
+# Missing indexes for common query patterns:
+
+# 1. work_schedules.is_active (queried alone frequently)
+# File: app/models/work_schedule.rb:14
+scope :active, -> { where(is_active: true) }
+# Used in: AvailabilityService, WeeklyAvailabilityCalculator, controllers
+# Current: Only compound indexes with is_active, no standalone index
+
+# 2. office_memberships.role (filtered by role)
+# File: app/models/office_membership.rb:25
+scope :by_role, ->(role) { where(role: role) }
+# Current: No index on role column
+
+# 3. appointments - composite (status, scheduled_at)
+# Pattern: Filtering by status AND ordering by scheduled_at
+# Current: Separate indexes, but no composite for this common pattern
+```
+
+**Problem Analysis**:
+- `WorkSchedule.active` is used in 6+ places but has no standalone `is_active` index
+- `OfficeMembership.by_role` filters lack index support
+- Appointments often filtered by status and ordered by scheduled_at (needs composite index)
+- As data grows, these missing indexes will cause slow queries
+
+**Proposed Solution**:
+
+Add targeted indexes for these common query patterns.
+
+**Implementation Steps**:
+1. **Create migration for indexes** - 30 minutes
+   ```ruby
+   # File: db/migrate/XXXXXX_add_missing_indexes.rb
+   class AddMissingIndexes < ActiveRecord::Migration[8.1]
+     def change
+       # Index for is_active on work_schedules (frequently queried alone)
+       add_index :work_schedules, :is_active
+
+       # Index for role on office_memberships
+       add_index :office_memberships, :role
+
+       # Composite index for common appointment query pattern
+       add_index :appointments, [:status, :scheduled_at]
+     end
+   end
+   ```
+
+2. **Test query performance** - 30 minutes
+   - Use `rails console` with query logging
+   - Run common queries and check EXPLAIN output
+   - Verify indexes are being used
+
+3. **Run migration** - 10 minutes
+   ```bash
+   bin/rails db:migrate
+   ```
+
+4. **Update schema** - Auto-generated
+   Schema will be updated automatically by migration
+
+**Better Code Example**:
+```sql
+-- BEFORE (no index on is_active alone):
+SELECT * FROM work_schedules WHERE is_active = true;
+-- Seq Scan on work_schedules (slow for large tables)
+
+-- AFTER (with index):
+SELECT * FROM work_schedules WHERE is_active = true;
+-- Index Scan using index_work_schedules_on_is_active (fast!)
+
+-- BEFORE (filtering and ordering separately):
+SELECT * FROM appointments WHERE status = 'confirmed' ORDER BY scheduled_at;
+-- Uses index_appointments_on_status, then sorts
+
+-- AFTER (composite index):
+SELECT * FROM appointments WHERE status = 'confirmed' ORDER BY scheduled_at;
+-- Index Scan using index_appointments_on_status_and_scheduled_at (faster!)
+```
+
+**Affected Files**:
+- `db/migrate/XXXXXX_add_missing_indexes.rb` - **CREATE THIS FILE**
+- `db/schema.rb` - Will be auto-updated after migration
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+- Note: Low risk, high reward. Can be done anytime.
+
+**References**:
+- [PostgreSQL EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html)
+- [Rails Indexing Guide](https://guides.rubyonrails.org/active_record_migrations.html#creating-standalone-migrations)
+
+---
+
+### M3: Magic Numbers in Validations
+
+**Category**: Maintainability
+**Effort**: ⏱️⏱️ Medium (~2 hours)
+**Impact**: Hard-coded values make intent unclear and changes difficult
+
+**Description**:
+String length validations and numeric constraints use hard-coded numbers (11, 100, 255, 500, etc.) without named constants. This makes it unclear why these specific values were chosen and harder to maintain consistency across the application.
+
+**Evidence**:
+```ruby
+# File: app/models/user.rb:24
+validates :cpf, length: { is: 11 }  # Why 11?
+
+# File: app/models/work_schedule.rb:12
+validates :day_of_week, numericality: {
+  only_integer: true,
+  greater_than_or_equal_to: 0,
+  less_than_or_equal_to: 6  # Why 6? (Days in week - 1, but not obvious)
+}
+
+# File: app/models/office.rb:20-23
+validates :name, length: { maximum: 255 }  # Standard DB limit, but not documented
+validates :address, length: { maximum: 500 }
+validates :city, length: { maximum: 100 }
+validates :state, length: { maximum: 50 }
+validates :postal_code, length: { maximum: 20 }
+```
+
+**Problem Analysis**:
+- CPF length of 11 is Brazilian CPF format, but not obvious from code
+- Day of week 0-6 maps to Sunday-Saturday, but requires domain knowledge
+- String length limits (255, 500, 100) have no explanation
+- If limits need to change, must find all occurrences
+- No consistency checking (is postal_code always 20 across models?)
+
+**Proposed Solution**:
+
+Extract magic numbers to named constants with descriptive names.
+
+**Implementation Steps**:
+1. **Create constants in models** - 1 hour
+   ```ruby
+   # File: app/models/user.rb
+   class User < ApplicationRecord
+     CPF_LENGTH = 11  # Brazilian CPF format: XXX.XXX.XXX-XX (11 digits)
+     MAX_NAME_LENGTH = 100
+     MAX_PHONE_LENGTH = 20
+
+     validates :cpf, length: { is: CPF_LENGTH }
+     validates :first_name, :last_name, length: { maximum: MAX_NAME_LENGTH }
+     validates :phone, length: { maximum: MAX_PHONE_LENGTH }
+   end
+
+   # File: app/models/work_schedule.rb
+   class WorkSchedule < ApplicationRecord
+     DAYS_IN_WEEK = 7
+     LAST_DAY_OF_WEEK = DAYS_IN_WEEK - 1  # 6 (Saturday)
+
+     validates :day_of_week, numericality: {
+       only_integer: true,
+       greater_than_or_equal_to: 0,
+       less_than_or_equal_to: LAST_DAY_OF_WEEK
+     }
+   end
+
+   # File: app/models/office.rb
+   class Office < ApplicationRecord
+     MAX_NAME_LENGTH = 255  # Standard VARCHAR limit
+     MAX_ADDRESS_LENGTH = 500
+     MAX_CITY_LENGTH = 100
+     MAX_STATE_LENGTH = 50
+     MAX_POSTAL_CODE_LENGTH = 20
+
+     validates :name, length: { maximum: MAX_NAME_LENGTH }
+     validates :address, length: { maximum: MAX_ADDRESS_LENGTH }
+     validates :city, length: { maximum: MAX_CITY_LENGTH }
+     validates :state, length: { maximum: MAX_STATE_LENGTH }
+     validates :postal_code, length: { maximum: MAX_POSTAL_CODE_LENGTH }
+   end
+   ```
+
+2. **Update other magic numbers** - 30 minutes
+   ```ruby
+   # File: app/services/availability_service.rb
+   SECONDS_PER_MINUTE = 60
+   minutes = (seconds / SECONDS_PER_MINUTE).to_i
+   ```
+
+3. **Update tests if needed** - 30 minutes
+   - Tests can reference constants: `User::CPF_LENGTH`
+   - Makes test intent clearer
+
+**Better Code Example**:
+```ruby
+# BEFORE (unclear intent):
+validates :cpf, length: { is: 11 }
+validates :day_of_week, numericality: { less_than_or_equal_to: 6 }
+
+# AFTER (self-documenting):
+CPF_LENGTH = 11  # Brazilian CPF format
+LAST_DAY_OF_WEEK = 6  # Saturday
+
+validates :cpf, length: { is: CPF_LENGTH }
+validates :day_of_week, numericality: { less_than_or_equal_to: LAST_DAY_OF_WEEK }
+```
+
+**Affected Files**:
+- `app/models/user.rb` - Add constants for CPF, name, phone lengths
+- `app/models/work_schedule.rb` - Add constants for days of week
+- `app/models/office.rb` - Add constants for field lengths
+- `app/models/office_membership.rb` - Add constant for role length
+- `app/services/availability_service.rb` - Add SECONDS_PER_MINUTE (see H3)
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+- Related: H3 (also addresses SECONDS_PER_MINUTE magic number)
+
+---
+
+### M4: Unclear Method Naming in WorkSchedule
+
+**Category**: Maintainability / Clarity
+**Effort**: ⏱️ Quick (~1.5 hours)
+**Impact**: Confusing method names that don't clearly indicate purpose
+
+**Description**:
+The `effective_opening_time` and `effective_closing_time` methods in WorkSchedule have vague names and inconsistent return types. The term "effective" is unclear, and the methods return different types (Time object vs String) depending on whether work_periods exist.
+
+**Evidence**:
+```ruby
+# File: app/models/work_schedule.rb:94-105
+def effective_opening_time
+  return opening_time if work_periods.blank?
+  work_periods.first&.dig("start")  # Returns String "09:00"
+end
+
+def effective_closing_time
+  return closing_time if work_periods.blank?
+  work_periods.last&.dig("end")  # Returns String "17:00"
+end
+```
+
+**Problem Analysis**:
+- "Effective" is vague - effective in what way? Compared to what?
+- Returns different types: `Time` object (from opening_time) or `String` (from work_periods)
+- Not clear these return first/last period times (not overall opening/closing)
+- Comment says "for backward compatibility" but doesn't explain context
+- Methods may be deprecated but no deprecation warning
+
+**Proposed Solution**:
+
+Rename methods to clearly indicate they return first/last period times, or deprecate if no longer needed.
+
+**Implementation Steps**:
+1. **Audit usage** - 30 minutes
+   ```bash
+   # Search for usage of these methods
+   git grep "effective_opening_time"
+   git grep "effective_closing_time"
+   ```
+   - Determine if methods are actually used
+   - Check views, controllers, services
+
+2. **Option A: Rename if used** - 45 minutes
+   ```ruby
+   # File: app/models/work_schedule.rb
+   def first_period_start_time
+     return opening_time if work_periods.blank?
+     work_periods.first&.dig("start")
+   end
+
+   def last_period_end_time
+     return closing_time if work_periods.blank?
+     work_periods.last&.dig("end")
+   end
+
+   # Deprecated aliases for backward compatibility
+   alias_method :effective_opening_time, :first_period_start_time
+   alias_method :effective_closing_time, :last_period_end_time
+   ```
+
+3. **Option B: Remove if unused** - 15 minutes
+   - If audit shows no usage, simply delete the methods
+   - Remove tests for these methods
+
+4. **Update callers** - 30 minutes
+   - Replace old method calls with new method names
+   - Update tests to use new names
+
+**Better Code Example**:
+```ruby
+# BEFORE (vague naming):
+def effective_opening_time
+  return opening_time if work_periods.blank?
+  work_periods.first&.dig("start")
+end
+
+# AFTER (clear intent):
+def first_period_start_time
+  return opening_time if work_periods.blank?
+  work_periods.first&.dig("start")
+end
+
+# Usage is self-documenting:
+schedule.first_period_start_time  # Ah, the start of the first period!
+```
+
+**Affected Files**:
+- `app/models/work_schedule.rb` - Rename methods
+- Search results from grep - Update callers
+- `test/models/work_schedule_test.rb` - Update tests
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+
+---
+
+### M5: Duplicate Code Pattern - activate!/deactivate!
+
+**Category**: Code Duplication
+**Effort**: ⏱️⏱️ Medium (~3 hours)
+**Impact**: Same pattern repeated in multiple models
+
+**Description**:
+The `activate!` and `deactivate!` methods follow the same pattern in multiple models (WorkSchedule, OfficeMembership, potentially Office). This violates DRY and means changes to the pattern must be made in multiple places.
+
+**Evidence**:
+```ruby
+# File: app/models/work_schedule.rb:113-119
+def activate!
+  update!(is_active: true)
+end
+
+def deactivate!
+  update!(is_active: false)
+end
+
+# File: app/models/office_membership.rb:28-34
+def activate!
+  update!(is_active: true)
+end
+
+def deactivate!
+  update!(is_active: false)
+end
+```
+
+**Problem Analysis**:
+- Identical implementation in 2+ models
+- If we want to add callbacks or logging, must update multiple places
+- Common pattern suggests this should be a shared concern
+- All models with `is_active` column could benefit
+
+**Proposed Solution**:
+
+Extract to an `Activatable` concern.
+
+**Implementation Steps**:
+1. **Create Activatable concern** - 1 hour
+   ```ruby
+   # File: app/models/concerns/activatable.rb
+   module Activatable
+     extend ActiveSupport::Concern
+
+     included do
+       # Ensure the including model has an is_active column
+       validates :is_active, inclusion: { in: [true, false] }
+
+       # Scopes for active/inactive records
+       scope :active, -> { where(is_active: true) }
+       scope :inactive, -> { where(is_active: false) }
+     end
+
+     # Activate this record (sets is_active to true)
+     # @return [Boolean] true if update succeeded
+     # @raise [ActiveRecord::RecordInvalid] if validation fails
+     def activate!
+       update!(is_active: true)
+     end
+
+     # Deactivate this record (sets is_active to false)
+     # @return [Boolean] true if update succeeded
+     # @raise [ActiveRecord::RecordInvalid] if validation fails
+     def deactivate!
+       update!(is_active: false)
+     end
+
+     # Check if this record is active
+     # @return [Boolean] true if is_active is true
+     def active?
+       is_active == true
+     end
+
+     # Check if this record is inactive
+     # @return [Boolean] true if is_active is false
+     def inactive?
+       !active?
+     end
+   end
+   ```
+
+2. **Update models to use concern** - 1 hour
+   ```ruby
+   # File: app/models/work_schedule.rb
+   class WorkSchedule < ApplicationRecord
+     include Activatable  # ← Add this
+
+     # Remove duplicate methods:
+     # - activate!
+     # - deactivate!
+     # - active scope (now provided by concern)
+   end
+
+   # File: app/models/office_membership.rb
+   class OfficeMembership < ApplicationRecord
+     include Activatable  # ← Add this
+
+     # Remove duplicate methods
+   end
+
+   # File: app/models/office.rb
+   class Office < ApplicationRecord
+     include Activatable  # ← Add this (if office has activate!/deactivate!)
+
+     # Remove duplicate methods
+   end
+   ```
+
+3. **Create tests** - 1 hour
+   ```ruby
+   # File: test/models/concerns/activatable_test.rb
+   require "test_helper"
+
+   class ActivatableTest < ActiveSupport::TestCase
+     # Create a dummy model for testing
+     class DummyActivatable
+       include ActiveModel::Model
+       include ActiveModel::Attributes
+       include Activatable
+
+       attribute :is_active, :boolean, default: false
+     end
+
+     test "activate! sets is_active to true" do
+       record = DummyActivatable.new(is_active: false)
+       record.activate!
+       assert record.is_active
+     end
+
+     test "deactivate! sets is_active to false" do
+       record = DummyActivatable.new(is_active: true)
+       record.deactivate!
+       refute record.is_active
+     end
+
+     test "active? returns true when is_active is true" do
+       record = DummyActivatable.new(is_active: true)
+       assert record.active?
+     end
+
+     test "inactive? returns true when is_active is false" do
+       record = DummyActivatable.new(is_active: false)
+       assert record.inactive?
+     end
+   end
+   ```
+
+4. **Verify existing tests still pass** - 30 minutes
+   - Run model tests for WorkSchedule, OfficeMembership, Office
+   - Ensure behavior hasn't changed
+
+**Better Code Example**:
+```ruby
+# BEFORE (duplicated in each model):
+class WorkSchedule < ApplicationRecord
+  def activate!
+    update!(is_active: true)
+  end
+
+  def deactivate!
+    update!(is_active: false)
+  end
+end
+
+class OfficeMembership < ApplicationRecord
+  def activate!
+    update!(is_active: true)
+  end
+
+  def deactivate!
+    update!(is_active: false)
+  end
+end
+
+# AFTER (DRY with concern):
+class WorkSchedule < ApplicationRecord
+  include Activatable
+end
+
+class OfficeMembership < ApplicationRecord
+  include Activatable
+end
+```
+
+**Affected Files**:
+- `app/models/concerns/activatable.rb` - **CREATE THIS FILE**
+- `app/models/work_schedule.rb` - Include concern, remove methods
+- `app/models/office_membership.rb` - Include concern, remove methods
+- `app/models/office.rb` - Include concern if applicable
+- `test/models/concerns/activatable_test.rb` - **CREATE THIS FILE**
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+
+---
+
+### M6: Inconsistent Hash Key Access
+
+**Category**: Code Quality / Bugs
+**Effort**: ⏱️ Quick (~1 hour)
+**Impact**: Defensive code that might hide bugs
+
+**Description**:
+The SchedulesFormDataParser has defensive programming that checks for both string and symbol hash keys. This is unclear and might hide bugs where the wrong format is being passed.
+
+**Evidence**:
+```ruby
+# File: app/services/schedules_form_data_parser.rb:79-83
+periods_params.values.map do |period|
   {
-    slots_by_day: calculate_slots_by_day,
-    total_slots: count_total_slots,
-    available_slots: count_available_slots
+    "start" => period[:start] || period["start"],
+    "end" => period[:end] || period["end"]
   }
-rescue StandardError => e
-  raise CalculationError, "Failed to calculate availability: #{e.message}"
 end
 ```
 
-**Why It's Problematic:**
-- Catches unexpected errors (NoMethodError, ArgumentError, etc.)
-- Loses stack trace
-- Makes debugging harder
+**Problem Analysis**:
+- Unclear which format is expected (symbols or strings)
+- No documentation explaining why both are needed
+- Defensive code might hide bugs where wrong format is passed
+- If only one format is actually used, the fallback is dead code
 
-**Refactoring Solution:**
+**Proposed Solution**:
 
-Preserve error cause and be more specific:
+Determine the actual input format, document it, and remove the defensive code.
 
+**Implementation Steps**:
+1. **Audit callers** - 20 minutes
+   ```bash
+   # Find where SchedulesFormDataParser is instantiated
+   git grep "SchedulesFormDataParser.new"
+   ```
+   - Check what format params are in
+   - Determine if it's always symbols, always strings, or mixed
+
+2. **Document expected format** - 10 minutes
+   ```ruby
+   # File: app/services/schedules_form_data_parser.rb
+   # @param params [Hash] Form params with string keys (Rails convention)
+   #   Example: { "0" => { "start" => "09:00", "end" => "17:00" } }
+   def initialize(params:, office:, provider:)
+     # ...
+   end
+   ```
+
+3. **Remove defensive code** - 20 minutes
+   ```ruby
+   # If params always have string keys:
+   periods_params.values.map do |period|
+     {
+       "start" => period["start"],
+       "end" => period["end"]
+     }
+   end
+
+   # If params always have symbol keys:
+   periods_params.values.map do |period|
+     {
+       "start" => period[:start],
+       "end" => period[:end]
+     }
+   end
+   ```
+
+4. **Add tests to verify format** - 10 minutes
+   - Test with string keys (Rails params default)
+   - Test should fail if wrong format is passed (intentionally)
+
+**Better Code Example**:
 ```ruby
-def call
-  {
-    slots_by_day: calculate_slots_by_day,
-    total_slots: count_total_slots,
-    available_slots: count_available_slots
-  }
-rescue ArgumentError, KeyError => e
-  # Only catch expected errors
-  raise CalculationError.new("Failed to calculate availability: #{e.message}", cause: e)
-rescue StandardError => e
-  # Log unexpected errors before re-raising
-  Rails.logger.error("Unexpected error in availability calculation: #{e.class} - #{e.message}")
-  Rails.logger.error(e.backtrace.join("\n"))
-  raise
-end
+# BEFORE (unclear, defensive):
+{
+  "start" => period[:start] || period["start"],  # Which format?
+  "end" => period[:end] || period["end"]
+}
+
+# AFTER (clear, intentional):
+# With documentation showing params are strings from Rails forms
+{
+  "start" => period["start"],  # Rails params use string keys
+  "end" => period["end"]
+}
 ```
 
-**Benefits:**
-- Preserves stack trace
-- Distinguishes expected vs unexpected errors
-- Better debugging
-- More targeted error handling
+**Affected Files**:
+- `app/services/schedules_form_data_parser.rb` - Document format, remove defensive code
+- `test/services/schedules_form_data_parser_test.rb` - **CREATE THIS FILE** with format tests
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: L6 (would be easier with tests in place first)
 
 ---
 
-### 10. Primitive Obsession
+### M7: Missing Scopes for Common Queries
 
-#### 🟡 Issue 10.1: String-Based Slot Status
+**Category**: Maintainability
+**Effort**: ⏱️⏱️ Medium (~2.5 hours)
+**Impact**: Repeated query chains reduce readability
 
-**File:** `app/services/slot_generator.rb:73-78`
-**Severity:** 🟡 Medium
-**Effort to Fix:** 1 hour
+**Description**:
+Several models have common query patterns that are repeated across the codebase. These should be extracted into named scopes for better readability and consistency.
 
-**Problem:**
-Slot status is a magic string:
-
-**Current Code:**
+**Evidence**:
 ```ruby
-def check_availability(start_time, end_time, buffer_minutes, duration)
-  checker = OverlapChecker.new(@appointments, duration: duration)
-  effective_end_time = end_time + buffer_minutes.minutes
-  is_busy = checker.any_overlap?(start_time, effective_end_time)
-  is_busy ? "busy" : "available"
-end
+# Missing scopes for User model:
+# No scope for users who are providers
+current_user.offices.exists?  # Repeated pattern for checking provider status
 
-# Used in WeeklyAvailabilityCalculator
-all_slots.count { |slot| slot.status == "available" }
+# Missing scopes for WorkSchedule:
+# Common pattern: chain active, provider, office, and day
+WorkSchedule.active.for_provider(id).for_office(id).for_day(day)
+# Could be: WorkSchedule.active_for(provider: id, office: id, day: day)
+
+# Missing scopes for Appointment:
+# Pattern: by status and date range together
+Appointment.where(status: :confirmed).where(scheduled_at: date_range)
 ```
 
-**Why It's Problematic:**
-- No type safety
-- Could be any string value
-- String comparison is error-prone (typos, case sensitivity)
-- Hard to find all usages
+**Problem Analysis**:
+- Query chains are verbose and repeated
+- Intent is not immediately clear from chained where clauses
+- Changes to query logic require updates in multiple places
+- No consistent way to fetch related data
 
-**Refactoring Solution:**
+**Proposed Solution**:
 
-Create a SlotStatus enum/module:
+Add composite scopes for common query patterns.
 
+**Implementation Steps**:
+1. **Add User provider scopes** - 30 minutes
+   ```ruby
+   # File: app/models/user.rb
+   # Check if user is a provider (manages at least one office)
+   scope :providers, -> { joins(:office_memberships).where(office_memberships: { is_active: true }).distinct }
+
+   # Instance method alternative
+   def provider?
+     offices.exists?
+   end
+   ```
+
+2. **Add WorkSchedule composite scope** - 45 minutes
+   ```ruby
+   # File: app/models/work_schedule.rb
+   # Find active schedule for specific provider, office, and day
+   # @param provider [User, Integer] Provider or provider ID
+   # @param office [Office, Integer] Office or office ID
+   # @param day [Integer] Day of week (0-6)
+   # @return [ActiveRecord::Relation]
+   scope :active_for, ->(provider:, office:, day:) {
+     active
+       .for_provider(provider.is_a?(User) ? provider.id : provider)
+       .for_office(office.is_a?(Office) ? office.id : office)
+       .for_day(day)
+   }
+   ```
+
+3. **Add Appointment composite scopes** - 45 minutes
+   ```ruby
+   # File: app/models/appointment.rb
+   # Appointments by status within date range
+   scope :by_status_in_range, ->(status, start_date, end_date) {
+     by_status(status).where(scheduled_at: start_date..end_date)
+   }
+
+   # Confirmed appointments in date range (common pattern)
+   scope :confirmed_in_range, ->(start_date, end_date) {
+     by_status_in_range(:confirmed, start_date, end_date)
+   }
+   ```
+
+4. **Update callers to use new scopes** - 30 minutes
+   - Search for repeated query patterns
+   - Replace with new scopes
+   - Verify behavior hasn't changed
+
+5. **Add tests** - 30 minutes
+   - Test each new scope returns correct results
+   - Test edge cases (nil values, empty results)
+
+**Better Code Example**:
 ```ruby
-# app/models/slot_status.rb
-module SlotStatus
-  AVAILABLE = "available"
-  BUSY = "busy"
+# BEFORE (verbose chains):
+work_schedule = WorkSchedule
+  .active
+  .for_provider(provider.id)
+  .for_office(office.id)
+  .for_day(scheduled_at.wday)
+  .first
 
-  ALL = [AVAILABLE, BUSY].freeze
+# AFTER (clear intent):
+work_schedule = WorkSchedule.active_for(
+  provider: provider,
+  office: office,
+  day: scheduled_at.wday
+).first
 
-  def self.valid?(status)
-    ALL.include?(status)
-  end
+# BEFORE (checking provider status):
+if current_user.offices.exists?
+  # provider logic
 end
 
-# In slot_generator.rb
-def check_availability(start_time, end_time, buffer_minutes, duration)
-  checker = OverlapChecker.new(@appointments, duration: duration)
-  effective_end_time = end_time + buffer_minutes.minutes
-  is_busy = checker.any_overlap?(start_time, effective_end_time)
-  is_busy ? SlotStatus::BUSY : SlotStatus::AVAILABLE
+# AFTER (self-documenting):
+if current_user.provider?
+  # provider logic
 end
-
-# In AvailableSlot value object
-class AvailableSlot
-  attr_reader :start_time, :end_time, :status
-
-  def initialize(start_time, end_time, status)
-    raise ArgumentError, "Invalid status" unless SlotStatus.valid?(status)
-    @start_time = start_time
-    @end_time = end_time
-    @status = status
-  end
-
-  def available?
-    status == SlotStatus::AVAILABLE
-  end
-
-  def busy?
-    status == SlotStatus::BUSY
-  end
-end
-
-# Usage
-all_slots.count(&:available?)
 ```
 
-**Benefits:**
-- Type safety
-- Discoverability (can find all usages)
-- Self-documenting
-- Prevents typos
+**Affected Files**:
+- `app/models/user.rb` - Add provider scopes
+- `app/models/work_schedule.rb` - Add composite scope
+- `app/models/appointment.rb` - Add date range scopes
+- Controllers and services using these queries - Update to use scopes
+- Test files - Add scope tests
+
+**Dependencies**:
+- Blocks: None
+- Blocked by: None
+- Related: L9 (provider? method)
 
 ---
 
-#### 🟡 Issue 10.2: Regex Pattern Duplication
+## Low Priority Issues
 
-**Files:**
-- `app/validators/work_period_validator.rb:35`
-- `app/models/concerns/time_parsing.rb:64, 88`
+### L1: Boolean Trap in GeocodeOfficeService
 
-**Severity:** 🟢 Low
-**Effort to Fix:** 15 minutes
+**Category**: Code Quality
+**Effort**: ⏱️⏱️ Medium (~2 hours)
+**Impact**: Constructor parameter intent unclear at call site
 
-**Problem:**
-Time validation regex duplicated with inconsistencies:
+**Description**:
+The `GeocodeOfficeService` has a boolean parameter `geocoding_enabled` that isn't clear at the call site. This is a "boolean trap" where the purpose of `true` or `false` isn't obvious without looking at the method signature.
 
-**Current Code:**
+**Evidence**:
 ```ruby
-# work_period_validator.rb (uses \A...\z)
-time_str.match?(/\A([01]?[0-9]|2[0-3]):[0-5][0-9]\z/)
+# File: app/services/geocode_office_service.rb:2
+def initialize(office, geocoding_enabled: Rails.application.config.geocoding_enabled)
+  @office = office
+  @geocoding_enabled = geocoding_enabled
+end
 
-# time_parsing.rb (uses ^...$)
-if time_string.match?(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/)
+# Usage (unclear):
+GeocodeOfficeService.new(office, geocoding_enabled: false)  # Why false?
 ```
 
-**Refactoring Solution:**
+**Proposed Solution**:
+Use a null object or strategy pattern for clearer intent.
 
+**Implementation**:
 ```ruby
-# In app/models/concerns/time_parsing.rb
-module TimeParsing
-  TIME_FORMAT_REGEX = /\A([01]?[0-9]|2[0-3]):([0-5][0-9])\z/
-
-  def self.valid_time_format?(time_string)
-    time_string&.match?(TIME_FORMAT_REGEX)
-  end
-
-  # Use in parse_time_to_minutes
-  def self.parse_time_to_minutes(time_string)
-    return nil unless valid_time_format?(time_string)
-    # ...
+# Option 1: Null Object
+class GeocodeOfficeService
+  def self.call(office)
+    if Rails.application.config.geocoding_enabled
+      RealGeocoder.new(office).call
+    else
+      NullGeocoder.new(office).call
+    end
   end
 end
 
-# In work_period_validator.rb
-def valid_time_format?(time_str)
-  TimeParsing.valid_time_format?(time_str)
+# Option 2: Named constructor methods
+class GeocodeOfficeService
+  def self.with_geocoding(office)
+    new(office, geocoder: RealGeocoder.new)
+  end
+
+  def self.without_geocoding(office)
+    new(office, geocoder: NullGeocoder.new)
+  end
 end
 ```
 
-**Benefits:**
-- Single source of truth
-- Consistent anchor usage (`\A...\z`)
-- Reusable validation
+**Affected Files**:
+- `app/services/geocode_office_service.rb`
 
 ---
 
-## Refactoring Roadmap
+### L2: Inconsistent Default Duration Constants
 
-### Phase 1: Quick Wins (1-2 weeks, minimal risk)
+**Category**: Code Duplication
+**Effort**: ⏱️ Quick (~30 minutes)
+**Impact**: Two sources of truth for same value
 
-**Priority: Complete these first for immediate impact**
+**Description**:
+Default appointment duration is defined in two places: `Appointment::DEFAULT_DURATION_MINUTES` and `SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION`.
 
-1. ✅ Extract magic number constants (30 min)
-   - `WorkScheduleCollection` defaults
+**Evidence**:
+```ruby
+# File: app/models/appointment.rb:2
+DEFAULT_DURATION_MINUTES = 50
 
-2. ✅ Standardize time regex pattern (15 min)
-   - Create `TimeParsing::TIME_FORMAT_REGEX`
+# File: config/initializers/scheduling_defaults.rb:7
+DEFAULT_APPOINTMENT_DURATION = 50
+```
 
-3. ✅ Remove outdated comments (10 min)
-   - `SlotGenerator` line 13
+**Proposed Solution**:
+Use only SchedulingDefaults and reference it from Appointment.
 
-4. ✅ Add office existence validation (20 min)
-   - `User` model `add_office`/`remove_office`
+**Implementation**:
+```ruby
+# File: app/models/appointment.rb
+DEFAULT_DURATION_MINUTES = SchedulingDefaults::DEFAULT_APPOINTMENT_DURATION
 
-5. ✅ Create SlotStatus enum (20 min)
-   - Replace string status with constants
+# Or remove constant entirely and use SchedulingDefaults directly
+```
 
-6. ✅ Simplify address field check (20 min)
-   - `Office` model refactoring
-
-7. ✅ Move dashboard group_by to presenter (30 min)
-   - Create `AppointmentsPresenter`
-
-8. ✅ Add error cause preservation (15 min)
-   - `WeeklyAvailabilityCalculator`
-
-**Total Phase 1 Effort:** ~3 hours
-**Risk Level:** Low
-**Impact:** Improved readability, reduced magic values
+**Affected Files**:
+- `app/models/appointment.rb` - Update constant reference
 
 ---
 
-### Phase 2: Code Duplication Removal (2-3 weeks, medium risk)
+### L3: Complex Conditional in AvailabilityCalendar
 
-**Priority: Address DRY violations**
+**Category**: Code Quality
+**Effort**: ⏱️ Quick (~1 hour)
+**Impact**: Should use model scopes instead of raw SQL
 
-1. ✅ Centralize overlap detection logic (3-4 hours)
-   - Create `IntervalOverlap` module
-   - Update `OverlapChecker`, `WorkPeriodValidator`, `TimePeriod`
-   - **Tests:** Create `interval_overlap_test.rb`, update 3 existing test files
+**Description**:
+AvailabilityCalendar builds queries with raw SQL-style conditions instead of using model scopes.
 
-2. ✅ Consolidate time conversion logic (2-3 hours)
-   - Use `TimeParsing.parse_time_to_minutes` everywhere
-   - Remove `legacy_total_work_minutes` from `WorkSchedule`
-   - **Tests:** Update `work_schedule_test.rb`
+**Evidence**:
+```ruby
+# File: app/models/availability_calendar.rb:22-24
+schedules = work_schedules || WorkSchedule.where(office_id: self.office_id, is_active: true)
+appointments = Appointment.where(office_id: self.office_id, scheduled_at: self.period_start..self.period_end)
+                          .where.not(status: :cancelled)
+```
 
-3. ✅ Extract duplicate save/update logic (1-2 hours)
-   - `WorkScheduleCollection` refactoring
-   - **Tests:** Update `work_schedule_collection_test.rb`
+**Proposed Solution**:
+Use model scopes for clarity.
 
-**Total Phase 2 Effort:** ~8 hours
-**Risk Level:** Medium (requires test updates)
-**Impact:** Reduced maintenance burden, consistent behavior
+**Implementation**:
+```ruby
+# AFTER:
+schedules = work_schedules || WorkSchedule.for_office(office_id).active
+appointments = Appointment
+  .for_office(office_id)
+  .blocking_time
+  .between(period_start, period_end)
+```
 
----
-
-### Phase 3: Architectural Improvements (4-6 weeks, high impact)
-
-**Priority: Major refactorings for long-term maintainability**
-
-1. ✅ Split WorkScheduleCollection (8-12 hours)
-   - Create `SchedulesFormDataParser`
-   - Create `SchedulesPersistenceService`
-   - Slim down `WorkScheduleCollection`
-   - **Tests:** Create 2 new test files, update existing tests
-   - **Risk:** High - core business logic
-
-2. ✅ Extract Office concerns (4-6 hours)
-   - Create `Geocodable` concern
-   - Create `MemberManagement` concern
-   - Slim down `Office` model
-   - **Tests:** Create 2 new concern test files
-
-3. ✅ Simplify subtract_time_range algorithm (4-5 hours)
-   - Extract each case to private method
-   - **Tests:** Add tests for each case method
-   - **Risk:** Medium - critical availability logic
-
-4. ✅ Remove duration callback (2-3 hours)
-   - Create `AppointmentBuilder` service
-   - Update controllers
-   - **Tests:** Create service test, update controller tests
-
-5. ✅ Fix feature envy issues (4-6 hours)
-   - Add `time_range` method to `Appointment`
-   - Add `slot_configuration_for_date` to `WorkSchedule`
-   - Create value objects
-   - **Tests:** Update service tests
-
-**Total Phase 3 Effort:** ~30 hours
-**Risk Level:** High (architectural changes)
-**Impact:** Significantly improved maintainability and testability
+**Affected Files**:
+- `app/models/availability_calendar.rb`
 
 ---
 
-### Phase 4: Polish & Documentation (1-2 weeks, low risk)
+### L4: Typo in Comment
 
-**Priority: Final improvements and cleanup**
+**Category**: Documentation
+**Effort**: ⏱️ Quick (~5 minutes)
+**Impact**: Minor documentation quality issue
 
-1. ✅ Add logging to services (1-2 hours)
-   - `AvailabilityService` warning logs
-   - Other service objects
+**Evidence**:
+```ruby
+# File: app/services/weekly_availability_calculator.rb:123
+# Number of available (unboo ked) slots
+```
 
-2. ✅ Improve error messages (1-2 hours)
-   - More specific exception types
-   - Better validation messages
-
-3. ✅ Update documentation (2-3 hours)
-   - Add method comments
-   - Update CLAUDE.md
-   - Document new patterns
-
-4. ✅ Code review and testing (4-6 hours)
-   - Manual testing of refactored code
-   - Edge case verification
-   - Performance testing
-
-**Total Phase 4 Effort:** ~10 hours
-**Risk Level:** Low
-**Impact:** Better developer experience
+**Fix**:
+```ruby
+# Number of available (unbooked) slots
+```
 
 ---
 
-### Total Refactoring Effort
+### L5: Unused Private Method
 
-| Phase | Effort | Risk | Impact |
-|-------|--------|------|--------|
-| Phase 1: Quick Wins | ~3 hours | Low | Medium |
-| Phase 2: Duplication | ~8 hours | Medium | High |
-| Phase 3: Architecture | ~30 hours | High | Very High |
-| Phase 4: Polish | ~10 hours | Low | Medium |
-| **Total** | **~51 hours** | Varies | Very High |
+**Category**: Dead Code
+**Effort**: ⏱️ Quick (~10 minutes)
+**Impact**: Confusing unused code
+
+**Description**:
+The `deactivate_existing_schedules` private method in SchedulesPersistenceService is defined but never called.
+
+**Evidence**:
+```ruby
+# File: app/services/schedules_persistence_service.rb:69-74
+def deactivate_existing_schedules
+  office.work_schedules
+        .active
+        .for_provider(provider.id)
+        .update_all(is_active: false)
+end
+```
+
+**Proposed Solution**:
+Remove the method or use it if it was intended.
 
 ---
 
-## Testing Impact
+### L6: Missing Tests for Services and Concerns
 
-### Test Files Requiring Updates
+**Category**: Testing
+**Effort**: ⏱️⏱️⏱️ Large (~12 hours)
+**Impact**: Critical services lack test coverage
 
-#### New Test Files Needed
-1. `test/services/interval_overlap_test.rb` (new)
-2. `test/services/schedules_form_data_parser_test.rb` (new)
-3. `test/services/schedules_persistence_service_test.rb` (new)
-4. `test/services/appointment_builder_test.rb` (new)
-5. `test/models/concerns/geocodable_test.rb` (new)
-6. `test/models/concerns/member_management_test.rb` (new)
-7. `test/presenters/appointments_presenter_test.rb` (new)
-8. `test/values/slot_configuration_test.rb` (new)
+**Description**:
+Three services and one concern are missing test files entirely.
 
-#### Existing Test Files to Update
-1. `test/models/work_schedule_collection_test.rb` (major updates)
-2. `test/models/office_test.rb` (updates for extracted concerns)
-3. `test/models/appointment_test.rb` (remove callback tests)
-4. `test/services/availability_service_test.rb` (add case-specific tests)
-5. `test/services/overlap_checker_test.rb` (use centralized overlap logic)
-6. `test/validators/work_period_validator_test.rb` (use centralized overlap logic)
-7. `test/controllers/providers/dashboard_controller_test.rb` (presenter updates)
+**Missing Tests**:
+- `test/services/schedules_persistence_service_test.rb` - **DOES NOT EXIST**
+- `test/services/schedules_loader_test.rb` - **DOES NOT EXIST**
+- `test/services/schedules_form_data_parser_test.rb` - **DOES NOT EXIST**
+- `test/models/concerns/membership_management_test.rb` - **DOES NOT EXIST**
 
-### Testing Strategy
+**Proposed Solution**:
+Create comprehensive test files for each.
 
-**Before Each Refactoring:**
-1. Ensure all existing tests pass (`bin/rails test`)
-2. Run `bin/rubocop` to check style
-3. Run `bin/brakeman` for security check
+**Effort Breakdown**:
+- SchedulesPersistenceService tests: 4 hours
+- SchedulesLoader tests: 3 hours
+- SchedulesFormDataParser tests: 3 hours
+- MembershipManagement tests: 2 hours
 
-**During Refactoring:**
-1. Write tests for new classes/methods first (TDD)
-2. Update existing tests to match new behavior
-3. Ensure test coverage remains ≥90%
+---
 
-**After Each Refactoring:**
-1. Run full test suite (`bin/rails test && bin/rails test:system`)
-2. Manual testing of affected features
-3. Code review before committing
+### L7: Hard-coded Pagination Limits
+
+**Category**: Configuration
+**Effort**: ⏱️ Quick (~1 hour)
+**Impact**: Magic numbers for pagination
+
+**Evidence**:
+```ruby
+# File: app/controllers/customers/appointments_controller.rb:6
+@past_appointments = current_user.appointments.past.limit(10)
+
+# File: app/controllers/providers/dashboard_controller.rb:13,18
+.limit(20)  # Appears twice
+```
+
+**Proposed Solution**:
+Extract to constants.
+
+**Implementation**:
+```ruby
+# In controller or config
+PAST_APPOINTMENTS_LIMIT = 10
+DEFAULT_PAGE_SIZE = 20
+
+@past_appointments = current_user.appointments.past.limit(PAST_APPOINTMENTS_LIMIT)
+```
+
+---
+
+### L8: Missing Eager Loading in Controllers
+
+**Category**: Performance
+**Effort**: ⏱️ Quick (~1 hour)
+**Impact**: Potential N+1 queries in views
+
+**Evidence**:
+```ruby
+# File: app/controllers/customers/appointments_controller.rb:5-6
+@upcoming_appointments = current_user.appointments.upcoming
+@past_appointments = current_user.appointments.past.limit(10)
+# Missing: .includes(:office, :provider)
+```
+
+**Proposed Solution**:
+Add eager loading.
+
+**Implementation**:
+```ruby
+@upcoming_appointments = current_user.appointments.upcoming
+  .includes(:office, :provider)
+@past_appointments = current_user.appointments.past
+  .includes(:office, :provider)
+  .limit(10)
+```
+
+---
+
+### L9: Duplicate Role Checking Pattern
+
+**Category**: Code Duplication
+**Effort**: ⏱️ Quick (~1 hour)
+**Impact**: Same logic repeated 4+ times
+
+**Description**:
+The pattern `current_user.offices.exists?` is repeated across helpers and controllers to check if a user is a provider.
+
+**Evidence**:
+```ruby
+# File: app/helpers/application_helper.rb:5
+user_signed_in? && current_user.offices.exists?
+
+# File: app/controllers/providers/dashboard_controller.rb:26
+unless current_user.offices.exists?
+
+# File: app/controllers/customers/appointments_controller.rb:7
+@has_provider_access = current_user.offices.exists?
+```
+
+**Proposed Solution**:
+Add `provider?` method to User model.
+
+**Implementation**:
+```ruby
+# File: app/models/user.rb
+def provider?
+  offices.exists?
+end
+
+# Usage:
+current_user.provider?  # Clear and DRY
+```
+
+**Affected Files**:
+- `app/models/user.rb` - Add method
+- All files checking `offices.exists?` - Replace with `provider?`
+
+---
+
+## Prevention Patterns
+
+### Service Object Pattern
+
+**When to use**: Extracting complex business logic from models or controllers
+
+**Example from codebase**:
+```ruby
+# Good example: app/services/weekly_availability_calculator.rb
+class WeeklyAvailabilityCalculator
+  def initialize(office:, provider:, week_start:)
+    @office = office
+    @provider = provider
+    @week_start = week_start
+  end
+
+  def call
+    # Single public method for execution
+    # Returns a result hash
+  end
+
+  private
+  # Private methods for decomposition
+end
+
+# Usage:
+result = WeeklyAvailabilityCalculator.new(
+  office: @office,
+  provider: current_user,
+  week_start: Date.today.beginning_of_week
+).call
+```
+
+**Best practices**:
+- Single public method (`call` or `perform`)
+- Dependencies injected via constructor
+- Returns result object or hash
+- Keep under 150 lines
+- One responsibility per service
+
+---
+
+### Value Object Pattern
+
+**When to use**: Encapsulating data with behavior, immutable data structures
+
+**Example from codebase**:
+```ruby
+# Good example: app/values/time_period.rb
+TimePeriod = Data.define(:start_time, :end_time) do
+  def duration
+    return 0 unless start_time && end_time
+    end_time - start_time
+  end
+
+  def overlaps?(other)
+    # Domain logic encapsulated in value object
+  end
+end
+
+# Usage:
+period = TimePeriod.new(start_time: Time.parse("09:00"), end_time: Time.parse("17:00"))
+period.duration  # Returns seconds
+```
+
+**Best practices**:
+- Use `Data.define` for immutability
+- Add domain-specific methods
+- Keep them small and focused
+- No persistence logic
+
+---
+
+### Concern Extraction
+
+**When to use**: Sharing behavior across multiple models
+
+**Example from codebase**:
+```ruby
+# Good example: app/models/concerns/temporal_scopes.rb
+module TemporalScopes
+  extend ActiveSupport::Concern
+
+  included do
+    # Define class methods available to includers
+  end
+
+  class_methods do
+    def temporal_scope_field(field_name)
+      scope :upcoming, -> { where("#{field_name} > ?", Time.current) }
+      scope :past, -> { where("#{field_name} <= ?", Time.current) }
+    end
+  end
+end
+
+# Usage:
+class Appointment < ApplicationRecord
+  include TemporalScopes
+  temporal_scope_field :scheduled_at
+end
+```
+
+**Best practices**:
+- Use when 3+ models need same behavior
+- Clear single responsibility
+- Document what the concern provides
+- Test concerns independently
+
+---
+
+### Code Review Checklist
+
+Use this checklist when reviewing PRs:
+
+**Architecture**:
+- [ ] No business logic in controllers (use services)
+- [ ] Services are < 150 lines with single responsibility
+- [ ] Models are < 200 lines (extract concerns if needed)
+- [ ] Value objects used for data+behavior
+- [ ] Concerns used for shared model behavior
+
+**Performance**:
+- [ ] Eager loading used for associations (`.includes()`)
+- [ ] No N+1 queries (test with Bullet gem)
+- [ ] Database indexes exist for queried columns
+- [ ] No database queries in callbacks
+- [ ] Pagination on list actions
+
+**Code Quality**:
+- [ ] No magic numbers (use named constants)
+- [ ] Clear method names (no `effective_*`, `do_*`, `handle_*`)
+- [ ] No boolean traps (unclear true/false parameters)
+- [ ] Hash keys consistent (symbols or strings, not both)
+- [ ] DRY - no duplicate code blocks
+
+**Testing**:
+- [ ] New services have test files
+- [ ] New concerns have test files
+- [ ] Controllers test happy path + error cases
+- [ ] Edge cases covered (nil, empty, boundary values)
+- [ ] Integration tests for critical user flows
 
 ---
 
 ## References
 
-### Code Quality Resources
+### Internal Documentation
+- [CLAUDE.md](./CLAUDE.md) - Architecture overview and development guide
+- [README.md](./README.md) - Setup and development workflow
 
-**Books:**
-- [Code Complete (2nd Edition)](https://www.amazon.com/Code-Complete-Practical-Handbook-Construction/dp/0735619670) by Steve McConnell
-- [Refactoring: Improving the Design of Existing Code](https://martinfowler.com/books/refactoring.html) by Martin Fowler
-- [Clean Code](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882) by Robert C. Martin
-- [Practical Object-Oriented Design in Ruby](https://www.poodr.com/) by Sandi Metz
+### External Resources
+- [Refactoring: Ruby Edition](https://martinfowler.com/books/refactoringRubyEd.html) - Martin Fowler
+- [Rails Service Objects Tutorial](https://www.toptal.com/ruby-on-rails/rails-service-objects-tutorial)
+- [Rails Anti-Patterns](https://www.codeguru.com/dotnet/rails-anti-patterns/)
+- [Rubocop Rails Omakase](https://github.com/rails/rubocop-rails-omakase) - Style guide used in this project
+- [Better Specs](https://www.betterspecs.org/) - RSpec best practices (adaptable to Minitest)
 
-**Online Resources:**
-- [Rails Best Practices](https://rails-bestpractices.com/)
-- [Ruby Style Guide](https://rubystyle.guide/)
-- [Thoughtbot Guides](https://github.com/thoughtbot/guides)
-- [Martin Fowler's Catalog of Refactorings](https://refactoring.com/catalog/)
+### Performance Tools
+- [Bullet Gem](https://github.com/flyerhzm/bullet) - N+1 query detection
+- [PostgreSQL EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html) - Query analysis
+- [Rails Query Optimization](https://guides.rubyonrails.org/active_record_querying.html#eager-loading-associations)
 
-### Code Smell Definitions
-
-**God Object:** A class that knows too much or does too much, violating Single Responsibility Principle.
-
-**Feature Envy:** When a method uses more methods/data from another class than its own.
-
-**Primitive Obsession:** Using primitive types (strings, integers) instead of small value objects.
-
-**Magic Numbers/Strings:** Unexplained literals in code that should be named constants.
-
-**Long Method:** Method doing too much, should be decomposed into smaller methods.
-
-**Duplicate Code:** Same code structure appearing in multiple places (DRY violation).
-
-**Callback Hell:** Too many callbacks creating hidden dependencies and complex control flow.
+### Project Metrics
+- Total Lines of Ruby Code: ~3,500
+- Test Coverage: ~85% (estimated based on test file count)
+- Average Service Size: ~100 lines
+- Files with Tests: 32/40 (80%)
+- Active Code Smells: 20 (4 High, 7 Medium, 9 Low)
 
 ---
 
-## Summary
+**Last Updated**: December 5, 2025
+**Next Review**: January 5, 2026
 
-This codebase exhibits good overall structure with clear domain modeling and separation of concerns. However, several opportunities exist for improvement:
-
-**Strengths:**
-- Well-organized service objects
-- Clear domain boundaries
-- Good test coverage
-- Rails best practices generally followed
-
-**Areas for Improvement:**
-- Reduce god objects (WorkScheduleCollection, Office)
-- Eliminate code duplication (overlap detection, time conversion)
-- Simplify complex algorithms (subtract_time_range)
-- Replace magic numbers with constants
-- Move business logic out of callbacks
-
-**Recommended Approach:**
-1. Start with **Quick Wins** (Phase 1) - low risk, immediate impact
-2. Address **Code Duplication** (Phase 2) - prevents future issues
-3. Tackle **Architectural Issues** (Phase 3) - highest long-term value
-4. Polish and document (Phase 4) - improve developer experience
-
-By following this roadmap, the codebase will become more maintainable, testable, and easier for new developers to understand.
-
----
-
-**Report Generated:** 2025-12-05
-**Next Review:** Recommend quarterly code quality reviews
-**Maintainer:** Development Team
+**Quick Wins to Start**: L4 (typo fix), L5 (remove unused method), L2 (consolidate constants)

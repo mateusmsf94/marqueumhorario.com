@@ -1,4 +1,17 @@
 class Office < ApplicationRecord
+  # String length constraints
+  MAX_NAME_LENGTH = 255      # Standard VARCHAR limit
+  MAX_ADDRESS_LENGTH = 500
+  MAX_CITY_LENGTH = 100
+  MAX_STATE_LENGTH = 50
+  MAX_ZIP_CODE_LENGTH = 20
+
+  # Geographic coordinate constraints
+  MIN_LATITUDE = -90
+  MAX_LATITUDE = 90
+  MIN_LONGITUDE = -180
+  MAX_LONGITUDE = 180
+
   # Include concerns for separation of responsibilities
   include Geocodable
   include MembershipManagement
@@ -13,22 +26,22 @@ class Office < ApplicationRecord
   has_many :users, through: :office_memberships
 
   # Validations
-  validates :name, presence: true, length: { maximum: 255 }
+  validates :name, presence: true, length: { maximum: MAX_NAME_LENGTH }
   validates :time_zone, presence: true
   validate :time_zone_must_be_valid
 
-  validates :address, length: { maximum: 500 }, allow_blank: true
-  validates :city, length: { maximum: 100 }, allow_blank: true
-  validates :state, length: { maximum: 50 }, allow_blank: true
-  validates :zip_code, length: { maximum: 20 }, allow_blank: true
+  validates :address, length: { maximum: MAX_ADDRESS_LENGTH }, allow_blank: true
+  validates :city, length: { maximum: MAX_CITY_LENGTH }, allow_blank: true
+  validates :state, length: { maximum: MAX_STATE_LENGTH }, allow_blank: true
+  validates :zip_code, length: { maximum: MAX_ZIP_CODE_LENGTH }, allow_blank: true
 
   validates :latitude, numericality: {
-    greater_than_or_equal_to: -90,
-    less_than_or_equal_to: 90
+    greater_than_or_equal_to: MIN_LATITUDE,
+    less_than_or_equal_to: MAX_LATITUDE
   }, allow_nil: true
   validates :longitude, numericality: {
-    greater_than_or_equal_to: -180,
-    less_than_or_equal_to: 180
+    greater_than_or_equal_to: MIN_LONGITUDE,
+    less_than_or_equal_to: MAX_LONGITUDE
   }, allow_nil: true
 
   validate :address_completeness

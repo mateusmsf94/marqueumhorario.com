@@ -42,7 +42,7 @@ class SchedulesFormDataParser
       office: office,
       provider: provider,
       day_of_week: day_number,
-      is_active: day_params[:is_open] == "1",
+      is_active: day_params[:is_open] == SchedulingDefaults::FORM_CHECKED_VALUE,
       **parse_day_attributes(day_params)
     )
   end

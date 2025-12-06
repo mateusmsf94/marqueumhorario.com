@@ -9,7 +9,7 @@ class Providers::OnboardingsController < ApplicationController
   private
 
   def redirect_if_already_provider
-    if current_user.offices.exists?
+    if current_user.provider?
       redirect_to providers_dashboard_path,
         notice: "You're already a provider!"
     end

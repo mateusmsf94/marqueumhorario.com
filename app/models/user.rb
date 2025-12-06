@@ -1,4 +1,9 @@
 class User < ApplicationRecord
+  # String length constraints
+  MAX_NAME_LENGTH = 100
+  MAX_PHONE_LENGTH = 20
+  CPF_LENGTH = 11  # Brazilian CPF format: XXX.XXX.XXX-XX (11 digits)
+
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable,
@@ -17,22 +22,38 @@ class User < ApplicationRecord
   # For providers - work schedules
   has_many :work_schedules, foreign_key: :provider_id, dependent: :destroy
 
-  # Callbacks
-  before_validation :normalize_cpf
-
   # Validations
-  validates :first_name, presence: true, length: { maximum: 100 }
-  validates :last_name, presence: true, length: { maximum: 100 }
-  validates :phone, length: { maximum: 20 }, allow_blank: true
-  validates :cpf, length: { is: 11 }, allow_blank: true, uniqueness: { case_sensitive: false }
+  validates :first_name, presence: true, length: { maximum: MAX_NAME_LENGTH }
+  validates :last_name, presence: true, length: { maximum: MAX_NAME_LENGTH }
+  validates :phone, length: { maximum: MAX_PHONE_LENGTH }, allow_blank: true
+  validates :cpf, length: { is: CPF_LENGTH }, allow_blank: true, uniqueness: { case_sensitive: false }
   validate :cpf_format_validation, if: :cpf?
 
   # Scopes
   scope :with_cpf, -> { where.not(cpf: nil) }
 
+  # Virtual attributes
+  # Override cpf setter to normalize input (strip non-digit characters)
+  def cpf=(value)
+    super(value&.gsub(/\D/, ""))
+  end
+
+  # Format CPF for display (XXX.XXX.XXX-XX)
+  def cpf_formatted
+    return unless cpf
+    cpf.gsub(/(\d{3})(\d{3})(\d{3})(\d{2})/, '\1.\2.\3-\4')
+  end
+
   # Instance methods
   def full_name
     "#{first_name} #{last_name}".strip
+  end
+
+  # Check if user is a provider (manages at least one office)
+  #
+  # @return [Boolean] true if user has at least one office
+  def provider?
+    offices.exists?
   end
 
   # Manage offices
@@ -55,12 +76,6 @@ class User < ApplicationRecord
   end
 
   private
-
-  def normalize_cpf
-    return if cpf.blank?
-    # Remove any non-digit characters
-    self.cpf = cpf.gsub(/\D/, "")
-  end
 
   def cpf_format_validation
     return if cpf.blank?

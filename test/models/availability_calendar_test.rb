@@ -10,10 +10,10 @@ class AvailabilityCalendarTest < ActiveSupport::TestCase
     work_schedule = work_schedules(:monday_schedule)
     appointment = appointments(:next_monday_appointment)
 
-    # 2. Setup calendar for the week of the appointment
+    # 2. Setup calendar for just the specific day to avoid other fixture appointments
     appointment_date = appointment.scheduled_at.to_date
-    period_start = appointment_date.beginning_of_week
-    period_end = appointment_date.end_of_week
+    period_start = appointment_date.beginning_of_day
+    period_end = appointment_date.end_of_day
 
     calendar = AvailabilityCalendar.create!(
       office: @office,
