@@ -17,18 +17,11 @@ class Providers::WorkSchedulesController < ApplicationController
   # POST /providers/offices/:office_id/work_schedules
   # Create or update all 7 day schedules from form submission
   def create
-    @schedule_collection = WorkScheduleCollection.load_existing(
-      office: @office,
-      provider: current_user
+    load_schedule_collection
+    save_schedule_collection(
+      success_message: "Work schedules configured successfully! Here's your weekly availability:",
+      failure_action: :new
     )
-
-    if @schedule_collection.update(work_schedule_params)
-      redirect_to providers_office_work_schedules_path(@office),
-  notice: "Work schedules configured successfully! Here's your weekly availability:"
-    else
-      # Re-render form with validation errors
-      render :new, status: :unprocessable_entity
-    end
   end
 
   def show
@@ -71,17 +64,11 @@ class Providers::WorkSchedulesController < ApplicationController
   # PATCH /providers/offices/:office_id/work_schedules
   # Update existing schedules
   def update
-    @schedule_collection = WorkScheduleCollection.load_existing(
-      office: @office,
-      provider: current_user
+    load_schedule_collection
+    save_schedule_collection(
+      success_message: "Work schedules updated successfully! Here's your updated weekly availability:",
+      failure_action: :edit
     )
-
-    if @schedule_collection.update(work_schedule_params)
-      redirect_to providers_office_work_schedules_path(@office),
-  notice: "Work schedules updated successfully! Here's your updated weekly availability:"
-    else
-      render :edit, status: :unprocessable_entity
-    end
   end
 
   private
@@ -101,6 +88,24 @@ class Providers::WorkSchedulesController < ApplicationController
 
     redirect_to providers_dashboard_path,
                 alert: "You don't have permission to manage this office's schedules."
+  end
+
+  # Load existing schedule collection for the office and provider
+  def load_schedule_collection
+    @schedule_collection = WorkScheduleCollection.load_existing(
+      office: @office,
+      provider: current_user
+    )
+  end
+
+  # Save schedule collection with appropriate redirect or render
+  def save_schedule_collection(success_message:, failure_action:)
+    if @schedule_collection.update(work_schedule_params)
+      redirect_to providers_office_work_schedules_path(@office),
+                  notice: success_message
+    else
+      render failure_action, status: :unprocessable_entity
+    end
   end
 
   # Strong parameters for work schedule form

@@ -9,16 +9,18 @@ class Providers::DashboardController < ApplicationController
     @offices = current_user.offices.active.includes(:work_schedules)
     @work_schedules = current_user.work_schedules.active
 
-    @pending_appointments = current_user.provider_appointments
-                                     .by_status(:pending)
-                                     .upcoming
-                                     .includes(:customer, :office)
-                                     .limit(DASHBOARD_APPOINTMENTS_LIMIT)
+    provider_appointments = current_user.provider_appointments
 
-    upcoming_appointments = current_user.provider_appointments
-                                      .upcoming
-                                      .includes(:customer, :office)
-                                      .limit(DASHBOARD_APPOINTMENTS_LIMIT)
+    @pending_appointments = provider_appointments
+                              .by_status(:pending)
+                              .upcoming
+                              .includes(:customer, :office)
+                              .limit(DASHBOARD_APPOINTMENTS_LIMIT)
+
+    upcoming_appointments = provider_appointments
+                              .upcoming
+                              .includes(:customer, :office)
+                              .limit(DASHBOARD_APPOINTMENTS_LIMIT)
 
     @appointments_presenter = AppointmentsPresenter.new(upcoming_appointments)
   end

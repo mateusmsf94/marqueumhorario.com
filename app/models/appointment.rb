@@ -47,6 +47,7 @@ class Appointment < ApplicationRecord
   scope :for_customer, ->(customer_id) { where(customer_id: customer_id) }
   scope :for_provider, ->(provider_id) { where(provider_id: provider_id) }
   scope :blocking_time, -> { where.not(status: [ :cancelled ]) }
+  scope :for_date, ->(date) { where(scheduled_at: date.beginning_of_day..date.end_of_day) }
 
   # Calculate start time (uses scheduled_at)
   def start_time

@@ -54,18 +54,14 @@ class AvailabilityService
   # Calculate total available minutes for the day
   # @return [Integer] total available minutes
   def total_available_minutes
-    total = 0
-    available_periods.each do |period|
-      next unless period.start_time && period.end_time
+    available_periods.sum do |period|
+      next 0 unless period.start_time && period.end_time
 
-      # Convert to time objects and calculate difference in seconds
+      # Convert time difference to minutes
       start_time = period.start_time.to_time
       end_time = period.end_time.to_time
-      seconds = end_time.to_f - start_time.to_f
-      minutes = (seconds / 60).to_i
-      total += minutes
+      ((end_time - start_time) / 60).to_i
     end
-    total
   end
 
   private
@@ -86,14 +82,11 @@ class AvailabilityService
   def fetch_booked_appointments
     # Get appointments for this provider, office, and date
     # Exclude cancelled appointments as they don't block time slots
-    start_of_day = date.beginning_of_day
-    end_of_day = date.end_of_day
-
     Appointment
       .for_provider(provider.id)
       .for_office(office.id)
       .blocking_time
-      .where(scheduled_at: start_of_day..end_of_day)
+      .for_date(date)
       .order(:scheduled_at)
   end
 
