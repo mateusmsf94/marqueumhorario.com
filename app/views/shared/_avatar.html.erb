@@ -1,0 +1,18 @@
+<%
+  size_classes = {
+    small: "h-10 w-10 text-sm",
+    medium: "h-16 w-16 text-lg",
+    large: "h-24 w-24 text-2xl"
+  }
+  size = local_assigns[:size] || :medium
+%>
+
+<div class="<%= size_classes[size] %> rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0">
+  <% if user.avatar.attached? %>
+    <%= image_tag user.avatar_url(size: size),
+        class: "h-full w-full object-cover",
+        alt: user.full_name %>
+  <% else %>
+    <span class="text-white font-bold"><%= user.initials %></span>
+  <% end %>
+</div>

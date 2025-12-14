@@ -6,3 +6,12 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:
 #   Enabled: false
+
+# Complexity exceptions for files with inherent algorithmic complexity
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - 'app/services/period_subtractor_service.rb' # 5 distinct overlap cases
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - 'app/services/period_subtractor_service.rb' # 5 distinct overlap cases

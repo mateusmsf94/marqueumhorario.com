@@ -25,4 +25,14 @@ Rails.application.routes.draw do
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+
+  # Public booking routes (MUST be last to avoid conflicts)
+  # Constraint prevents slugs from matching existing route prefixes
+  constraints(slug: /(?!providers|customers|users|rails|up|assets)[\w-]+/) do
+    get "/:slug", to: "public_profiles#show", as: :public_profile
+
+    scope "/:slug" do
+      resources :bookings, only: [:new, :create]
+    end
+  end
 end

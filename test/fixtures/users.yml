@@ -3,6 +3,7 @@
 provider_john:
   first_name: "John"
   last_name: "Smith"
+  slug: "john-smith"
   email: "john@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
   phone: "5511999998888"
@@ -11,6 +12,7 @@ provider_john:
 provider_jane:
   first_name: "Jane"
   last_name: "Doe"
+  slug: "jane-doe"
   email: "jane@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
   phone: "5511888887777"
@@ -19,6 +21,7 @@ provider_jane:
 customer_alice:
   first_name: "Alice"
   last_name: "Johnson"
+  slug: "alice-johnson"
   email: "alice@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
   cpf: "98765432109"
@@ -26,6 +29,7 @@ customer_alice:
 customer_bob:
   first_name: "Bob"
   last_name: "Williams"
+  slug: "bob-williams"
   email: "bob@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
   phone: "5511777776666"
@@ -34,6 +38,7 @@ customer_bob:
 provider_customer_charlie:
   first_name: "Charlie"
   last_name: "Brown"
+  slug: "charlie-brown"
   email: "charlie@example.com"
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password123') %>
   phone: "5511666665555"

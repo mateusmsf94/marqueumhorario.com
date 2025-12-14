@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_05_215708) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_12_012205) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -87,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_05_215708) do
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.text "bio"
     t.string "cpf", limit: 11
     t.datetime "created_at", null: false
     t.datetime "current_sign_in_at"
@@ -102,11 +103,13 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_05_215708) do
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token", limit: 255
     t.integer "sign_in_count", default: 0, null: false
+    t.string "slug", limit: 100, null: false
     t.datetime "updated_at", null: false
     t.index ["cpf"], name: "index_users_on_cpf", unique: true, where: "(cpf IS NOT NULL)"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["last_name", "first_name"], name: "index_users_on_last_name_and_first_name"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["slug"], name: "index_users_on_slug", unique: true
   end
 
   create_table "work_schedules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

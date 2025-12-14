@@ -1,0 +1,54 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Provider Header -->
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+    <div class="flex items-start gap-6">
+      <!-- Avatar -->
+      <div class="flex-shrink-0">
+        <%= render "shared/avatar", user: @provider, size: :large %>
+      </div>
+
+      <!-- Provider Info -->
+      <div class="flex-1">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+          <%= @provider.full_name %>
+        </h1>
+
+        <% if @provider.bio.present? %>
+          <p class="text-gray-700 mt-3 whitespace-pre-line">
+            <%= @provider.bio %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Office Selector (if multiple) -->
+  <% if @offices.count > 1 && @selected_office.nil? %>
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold mb-4">Select an Office</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @offices.each do |office| %>
+          <%= link_to public_profile_path(@provider.slug, office_id: office.id),
+              class: "block p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-200" do %>
+            <h3 class="font-semibold text-lg mb-2"><%= office.name %></h3>
+            <p class="text-gray-600 text-sm"><%= office.address %></p>
+            <p class="text-blue-600 text-sm mt-2">View availability →</p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Availability Calendar -->
+  <% if @selected_office && @availability %>
+    <%= render "availability_calendar",
+        availability: @availability,
+        office: @selected_office,
+        provider: @provider,
+        can_book: @can_book %>
+  <% elsif @offices.empty? %>
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+      <p class="text-yellow-800">This provider hasn't set up any offices yet.</p>
+    </div>
+  <% end %>
+</div>

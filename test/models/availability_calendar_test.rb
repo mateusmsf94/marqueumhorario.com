@@ -27,8 +27,6 @@ class AvailabilityCalendarTest < ActiveSupport::TestCase
     # 4. Assertions
 
     # Expected busy period based on the fixture
-    busy_start_time = appointment.scheduled_at
-    busy_end_time = busy_start_time + work_schedule.slot_duration_minutes.minutes
 
     # The generator creates slots with buffer; 9:00 and 10:15 slots are blocked by the 10:00 appointment
     # Cancelled appointments do not block slots (they're filtered out)

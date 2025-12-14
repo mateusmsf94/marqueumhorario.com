@@ -15,6 +15,9 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable, :trackable
 
+  # ActiveStorage avatar attachment
+  has_one_attached :avatar
+
   # Associations
   has_many :office_memberships, dependent: :destroy
   has_many :offices, through: :office_memberships
@@ -34,9 +37,17 @@ class User < ApplicationRecord
   validates :phone, length: { maximum: MAX_PHONE_LENGTH }, allow_blank: true
   validates :cpf, length: { is: CPF_LENGTH }, allow_blank: true, uniqueness: { case_sensitive: false }
   validate :cpf_format_validation, if: :cpf?
+  validates :slug, presence: true,
+            uniqueness: { case_sensitive: false },
+            format: { with: /\A[a-z0-9-]+\z/, message: "only lowercase letters, numbers, and hyphens" },
+            length: { maximum: 100 }
+  validates :bio, length: { maximum: 1000 }, allow_blank: true
 
   # Scopes
   scope :with_cpf, -> { where.not(cpf: nil) }
+
+  # Callbacks
+  before_validation :ensure_slug_present, on: :create
 
   # Virtual attributes
   # Override cpf setter to normalize input (strip non-digit characters)
@@ -81,6 +92,41 @@ class User < ApplicationRecord
     true
   end
 
+  # Use slug for URL generation instead of ID
+  def to_param
+    slug
+  end
+
+  # Get user initials for avatar fallback
+  def initials
+    "#{first_name[0]}#{last_name[0]}".upcase
+  end
+
+  # Get avatar URL with size variant
+  def avatar_url(size: :medium)
+    return nil unless avatar.attached?
+
+    case size
+    when :small then avatar.variant(resize_to_limit: [50, 50])
+    when :medium then avatar.variant(resize_to_limit: [200, 200])
+    when :large then avatar.variant(resize_to_limit: [400, 400])
+    end
+  end
+
+  # Regenerate slug from current name
+  def regenerate_slug
+    base_slug = "#{first_name}-#{last_name}".parameterize
+    candidate = base_slug
+    counter = 2
+
+    while User.where(slug: candidate).where.not(id: id).exists?
+      candidate = "#{base_slug}-#{counter}"
+      counter += 1
+    end
+
+    self.slug = candidate
+  end
+
   private
 
   def cpf_format_validation
@@ -90,5 +136,22 @@ class User < ApplicationRecord
     if cpf.match?(/\A(\d)\1{10}\z/)
       errors.add(:cpf, "is invalid")
     end
+  end
+
+  def ensure_slug_present
+    self.slug = generate_unique_slug if slug.blank?
+  end
+
+  def generate_unique_slug
+    base_slug = "#{first_name}-#{last_name}".parameterize
+    candidate = base_slug
+    counter = 2
+
+    while User.where(slug: candidate).where.not(id: id).exists?
+      candidate = "#{base_slug}-#{counter}"
+      counter += 1
+    end
+
+    candidate
   end
 end
