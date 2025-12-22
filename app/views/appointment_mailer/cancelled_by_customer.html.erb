@@ -1,0 +1,13 @@
+<!-- app/views/appointment_mailer/cancelled_by_customer.html.erb -->
+<h1>An Appointment Has Been Cancelled by Customer</h1>
+<p>
+  Dear <%= @appointment.provider.full_name %>,
+</p>
+<p>
+  The appointment "<%= @appointment.title %>" with <%= @appointment.customer.full_name %>
+  at <%= @appointment.office.name %> on <%= format_appointment_time(@appointment) %>
+  has been cancelled by the customer.
+</p>
+<p>
+  You may wish to contact the customer for further details.
+</p>

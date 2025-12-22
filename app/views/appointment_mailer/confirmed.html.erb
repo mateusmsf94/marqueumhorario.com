@@ -1,0 +1,13 @@
+<!-- app/views/appointment_mailer/confirmed.html.erb -->
+<h1>Your Appointment is Confirmed!</h1>
+<p>
+  Dear <%= @appointment.customer.full_name %>,
+</p>
+<p>
+  Your appointment "<%= @appointment.title %>" with <%= @appointment.provider.full_name %>
+  at <%= @appointment.office.name %> on <%= format_appointment_time(@appointment) %>
+  has been confirmed.
+</p>
+<p>
+  We look forward to seeing you.
+</p>

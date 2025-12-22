@@ -1,0 +1,16 @@
+<!-- app/views/appointment_mailer/declined.html.erb -->
+<h1>Your Appointment Has Been Declined</h1>
+<p>
+  Dear <%= @appointment.customer.full_name %>,
+</p>
+<p>
+  Unfortunately, your appointment "<%= @appointment.title %>" with <%= @appointment.provider.full_name %>
+  at <%= @appointment.office.name %> on <%= format_appointment_time(@appointment) %>
+  has been declined.
+</p>
+<% if @appointment.decline_reason.present? %>
+  <p>Reason for decline: <%= @appointment.decline_reason %></p>
+<% end %>
+<p>
+  Please contact <%= @appointment.provider.full_name %> if you wish to reschedule.
+</p>

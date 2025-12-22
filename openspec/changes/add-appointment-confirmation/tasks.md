@@ -88,15 +88,15 @@
 
 ## 7. Notification Infrastructure (Stub)
 
-- [ ] 7.1 Create `app/mailers/appointment_mailer.rb`
-  - [ ] Set default from email
-  - [ ] Create `confirmed(appointment)` method with TODO comment
-  - [ ] Create `declined(appointment)` method with TODO comment
-  - [ ] Create `cancelled_by_customer(appointment)` method with TODO comment
-- [ ] 7.2 Create mailer view stubs
-  - [ ] `app/views/appointment_mailer/confirmed.html.erb`
-  - [ ] `app/views/appointment_mailer/declined.html.erb`
-  - [ ] `app/views/appointment_mailer/cancelled_by_customer.html.erb`
+- [x] 7.1 Create `app/mailers/appointment_mailer.rb`
+  - [x] Set default from email
+  - [x] Create `confirmed(appointment)` method with TODO comment
+  - [x] Create `declined(appointment)` method with TODO comment
+  - [x] Create `cancelled_by_customer(appointment)` method with TODO comment
+- [x] 7.2 Create mailer view stubs
+  - [x] `app/views/appointment_mailer/confirmed.html.erb`
+  - [x] `app/views/appointment_mailer/declined.html.erb`
+  - [x] `app/views/appointment_mailer/cancelled_by_customer.html.erb`
 
 ## 8. Tests - Models
 
