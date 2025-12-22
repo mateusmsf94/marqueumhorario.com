@@ -80,11 +80,11 @@
 
 ## 6. Views - Customer Appointments
 
-- [ ] 6.1 Update `app/views/customers/appointments/index.html.erb`
-  - [ ] Add cancel button for each appointment
-  - [ ] Show button only for non-completed appointments
-  - [ ] Wire to `cancel_customers_appointment_path(appointment)`
-  - [ ] Add Turbo confirm dialog
+- [x] 6.1 Update `app/views/customers/appointments/index.html.erb`
+  - [x] Add cancel button for each appointment
+  - [x] Show button only for non-completed appointments
+  - [x] Wire to `cancel_customers_appointment_path(appointment)`
+  - [x] Add Turbo confirm dialog
 
 ## 7. Notification Infrastructure (Stub)
 
