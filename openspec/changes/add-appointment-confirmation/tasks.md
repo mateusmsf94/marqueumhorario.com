@@ -100,11 +100,11 @@
 
 ## 8. Tests - Models
 
-- [ ] 8.1 Add tests to `test/models/appointment_test.rb`
-  - [ ] Test decline_reason required when declined_at is present
-  - [ ] Test confirmed_at set automatically when status changes to confirmed
-  - [ ] Test decline_reason NOT required for customer cancellation (declined_at nil)
-  - [ ] Test helper methods: `declined_by_provider?` and `cancelled_by_customer?`
+- [x] 8.1 Add tests to `test/models/appointment_test.rb`
+  - [x] Test decline_reason required when declined_at is present
+  - [x] Test confirmed_at set automatically when status changes to confirmed
+  - [x] Test decline_reason NOT required for customer cancellation (declined_at nil)
+  - [x] Test helper methods: `declined_by_provider?` and `cancelled_by_customer?`
 
 ## 9. Tests - Controllers
 

@@ -309,4 +309,94 @@ class AppointmentTest < ActiveSupport::TestCase
     expected_duration = 45.minutes
     assert_equal expected_duration, time_range.duration
   end
+
+  # Confirmation and Cancellation Tests
+  test "decline_reason should be required when declined by provider" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :cancelled
+    appointment.declined_at = Time.current
+    appointment.decline_reason = nil # explicitly set to nil for test
+
+    assert_not appointment.valid?
+    assert_includes appointment.errors[:decline_reason], "can't be blank when declined by provider"
+
+    appointment.decline_reason = "Provider is unavailable"
+    assert appointment.valid?
+  end
+
+  test "confirmed_at should be set automatically when status changes to confirmed" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :confirmed
+    appointment.save!
+    assert_not_nil appointment.confirmed_at
+    assert_in_delta Time.current, appointment.confirmed_at, 1.second
+  end
+
+  test "confirmed_at should not change if already set and status remains confirmed" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :confirmed
+    appointment.save!
+    first_confirmed_at = appointment.confirmed_at
+    travel 1.hour do
+      appointment.title = "Updated title" # change another attribute
+      appointment.save!
+      assert_equal first_confirmed_at, appointment.confirmed_at # should not update
+    end
+  end
+
+  test "confirmed_at should be nil if status is not confirmed" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :cancelled # or any other non-confirmed status
+    appointment.save!
+    assert_nil appointment.confirmed_at
+  end
+
+  test "decline_reason should NOT be required for customer cancellation (declined_at nil)" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :cancelled
+    appointment.declined_at = nil # Customer cancellation, no declined_at set by provider
+    appointment.decline_reason = nil # Should be allowed to be nil
+
+    assert appointment.valid?
+  end
+
+  test "declined_by_provider? returns true if cancelled with declined_at present" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :cancelled
+    appointment.declined_at = Time.current
+    appointment.decline_reason = "Not available"
+    assert appointment.declined_by_provider?
+    assert_not appointment.cancelled_by_customer?
+  end
+
+  test "cancelled_by_customer? returns true if cancelled without declined_at" do
+    appointment = appointments(:pending_appointment)
+    appointment.status = :cancelled
+    appointment.declined_at = nil
+    assert appointment.cancelled_by_customer?
+    assert_not appointment.declined_by_provider?
+  end
+
+  test "confirmed! method sets status to confirmed and saves" do
+    appointment = appointments(:pending_appointment)
+    appointment.confirmed!
+    assert appointment.confirmed?
+    assert appointment.persisted?
+    assert_not_nil appointment.confirmed_at
+  end
+
+  test "cancelled! method sets status to cancelled, clears timestamps and saves" do
+    appointment = appointments(:confirmed_appointment) # Start with a confirmed appointment
+    appointment.confirmed_at = Time.current
+    appointment.declined_at = Time.current # Simulate a previous decline attempt
+    appointment.decline_reason = "Some reason"
+    appointment.save!
+
+    appointment.cancelled!
+    assert appointment.cancelled?
+    assert appointment.persisted?
+    assert_nil appointment.confirmed_at
+    assert_nil appointment.declined_at
+    assert_nil appointment.decline_reason
+  end
 end
