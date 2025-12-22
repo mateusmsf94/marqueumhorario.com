@@ -147,18 +147,13 @@
             </div>
             <div class="mt-4 flex gap-3">
               <%= button_to "Confirm",
-              "#",
-              method: :patch,
-              class:
-                "px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700",
-              disabled: true %>
+                confirm_providers_appointment_path(appointment),
+                method: :patch,
+                class: "px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700" %>
               <%= button_to "Decline",
-              "#",
-              method: :patch,
-              class:
-                "px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700",
-              disabled: true %>
-              <span class="text-xs text-gray-500 self-center">(Actions coming soon)</span>
+                "#",
+                class: "px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700",
+                data: { action: "click->appointment-modal#open", appointment_id: appointment.id, appointment_title: appointment.title } %>
             </div>
           </div>
         <% end %>
@@ -426,4 +421,52 @@
       <% end %>
     </div>
   </div>
+
+<!-- Decline Reason Modal -->
+<div
+  data-controller="appointment-modal"
+  data-appointment-modal-target="modal"
+  class="
+    hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full
+    z-50
+  "
+>
+  <div
+    class="
+      relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white
+    "
+  >
+    <h3
+      class="text-lg leading-6 font-medium text-gray-900"
+      data-appointment-modal-target="title"
+    >
+      Decline Appointment
+    </h3>
+    <div class="mt-2">
+      <%= form_with url: "#", method: :patch, data: { appointment_modal_target: "form" } do |form| %>
+        <div class="mb-4">
+          <%= form.label :decline_reason, "Reason for Decline", class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_area :decline_reason,
+            rows: 4,
+            required: true,
+            class: "mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm" %>
+        </div>
+        <div class="mt-4 flex justify-end gap-3">
+          <%= form.submit "Decline Appointment",
+            class: "px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 cursor-pointer" %>
+          <button
+            type="button"
+            data-action="click->appointment-modal#close"
+            class="
+              px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md
+              hover:bg-gray-400
+            "
+          >
+            Cancel
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
 </div>

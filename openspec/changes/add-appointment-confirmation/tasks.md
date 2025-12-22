@@ -63,20 +63,20 @@
 
 ## 5. Views - Provider Dashboard
 
-- [ ] 5.1 Update `app/views/providers/dashboard/index.html.erb`
-  - [ ] Replace disabled confirm/decline buttons (lines 148-161)
-  - [ ] Wire confirm button to `confirm_providers_appointment_path(appointment)`
-  - [ ] Add Stimulus controller for decline modal
-  - [ ] Update button classes and remove "Actions coming soon" text
-- [ ] 5.2 Add decline reason modal to provider dashboard
-  - [ ] Create modal div with Stimulus modal controller
-  - [ ] Add form with decline_reason textarea (required)
-  - [ ] Wire form to decline action with appointment ID
-  - [ ] Add submit and cancel buttons
-- [ ] 5.3 Create Stimulus modal controller if needed
-  - [ ] `app/javascript/controllers/modal_controller.js`
-  - [ ] Implement `open` and `close` actions
-  - [ ] Handle modal visibility and form submission
+- [x] 5.1 Update `app/views/providers/dashboard/index.html.erb`
+  - [x] Replace disabled confirm/decline buttons (lines 148-161)
+  - [x] Wire confirm button to `confirm_providers_appointment_path(appointment)`
+  - [x] Add Stimulus controller for decline modal
+  - [x] Update button classes and remove "Actions coming soon" text
+- [x] 5.2 Add decline reason modal to provider dashboard
+  - [x] Create modal div with Stimulus modal controller
+  - [x] Add form with decline_reason textarea (required)
+  - [x] Wire form to decline action with appointment ID
+  - [x] Add submit and cancel buttons
+- [x] 5.3 Create Stimulus modal controller if needed
+  - [x] `app/javascript/controllers/modal_controller.js`
+  - [x] Implement `open` and `close` actions
+  - [x] Handle modal visibility and form submission
 
 ## 6. Views - Customer Appointments
 
