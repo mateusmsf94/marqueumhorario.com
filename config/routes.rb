@@ -6,7 +6,11 @@ Rails.application.routes.draw do
 
   # Customer namespace
   namespace :customers do
-    resources :appointments, only: %i[index show]
+    resources :appointments, only: %i[index show] do
+      member do
+        patch :cancel
+      end
+    end
   end
 
   # Provider namespace
@@ -15,6 +19,14 @@ Rails.application.routes.draw do
     get "dashboard", to: "dashboard#index"
     resources :offices do
       resource :work_schedules, only: %i[new create show edit update], controller: "work_schedules"
+    end
+
+    resources :appointments, only: [] do
+      member do
+        patch :confirm
+        patch :decline
+        patch :cancel
+      end
     end
   end
 

@@ -76,6 +76,19 @@ class Appointment < ApplicationRecord
     cancelled? && declined_at.blank?
   end
 
+  def confirmed!
+    self.status = :confirmed
+    save!
+  end
+
+  def cancelled!
+    self.status = :cancelled
+    self.confirmed_at = nil
+    self.declined_at = nil
+    self.decline_reason = nil
+    save!
+  end
+
   private
 
   def scheduled_at_cannot_be_in_the_past

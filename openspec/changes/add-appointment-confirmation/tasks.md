@@ -25,41 +25,41 @@
 
 ## 3. Routes
 
-- [ ] 3.1 Add provider appointments routes in `config/routes.rb`
-  - [ ] Add `resources :appointments, only: []` in providers namespace
-  - [ ] Add member route `patch :confirm`
-  - [ ] Add member route `patch :decline`
-  - [ ] Add member route `patch :cancel`
-- [ ] 3.2 Add customer cancel route
-  - [ ] Add member route `patch :cancel` to customers appointments
+- [x] 3.1 Add provider appointments routes in `config/routes.rb`
+  - [x] Add `resources :appointments, only: []` in providers namespace
+  - [x] Add member route `patch :confirm`
+  - [x] Add member route `patch :decline`
+  - [x] Add member route `patch :cancel`
+- [x] 3.2 Add customer cancel route
+  - [x] Add member route `patch :cancel` to customers appointments
 
 ## 4. Controllers
 
-- [ ] 4.1 Create `app/controllers/providers/appointments_controller.rb`
-  - [ ] Add `before_action :authenticate_user!`
-  - [ ] Add `before_action :set_appointment` (uses association scoping)
-  - [ ] Implement `confirm` action
-    - [ ] Check if appointment is already cancelled
-    - [ ] Call `@appointment.confirmed!`
-    - [ ] Handle `ActiveRecord::StaleObjectError` for concurrent updates
-    - [ ] Redirect with success/error message
-  - [ ] Implement `decline` action
-    - [ ] Validate decline_reason parameter presence
-    - [ ] Set `declined_at` and `decline_reason`
-    - [ ] Call `@appointment.cancelled!`
-    - [ ] Handle validation errors
-    - [ ] Redirect with success/error message
-  - [ ] Implement `cancel` action
-    - [ ] Call `@appointment.cancelled!`
-    - [ ] Redirect with success message
-  - [ ] Implement private `set_appointment` method
-    - [ ] Use `current_user.provider_appointments.find(params[:id])` for authorization
-- [ ] 4.2 Update `app/controllers/customers/appointments_controller.rb`
-  - [ ] Add `cancel` action
-    - [ ] Find appointment via `current_user.appointments.find(params[:id])`
-    - [ ] Check if appointment is completed (reject if so)
-    - [ ] Call `@appointment.cancelled!`
-    - [ ] Redirect with success/error message
+- [x] 4.1 Create `app/controllers/providers/appointments_controller.rb`
+  - [x] Add `before_action :authenticate_user!`
+  - [x] Add `before_action :set_appointment` (uses association scoping)
+  - [x] Implement `confirm` action
+    - [x] Check if appointment is already cancelled
+    - [x] Call `@appointment.confirmed!`
+    - [x] Handle `ActiveRecord::StaleObjectError` for concurrent updates
+    - [x] Redirect with success/error message
+  - [x] Implement `decline` action
+    - [x] Validate decline_reason parameter presence
+    - [x] Set `declined_at` and `decline_reason`
+    - [x] Call `@appointment.cancelled!`
+    - [x] Handle validation errors
+    - [x] Redirect with success/error message
+  - [x] Implement `cancel` action
+    - [x] Call `@appointment.cancelled!`
+    - [x] Redirect with success message
+  - [x] Implement private `set_appointment` method
+    - [x] Use `current_user.provider_appointments.find(params[:id])` for authorization
+- [x] 4.2 Update `app/controllers/customers/appointments_controller.rb`
+  - [x] Add `cancel` action
+    - [x] Find appointment via `current_user.appointments.find(params[:id])`
+    - [x] Check if appointment is completed (reject if so)
+    - [x] Call `@appointment.cancelled!`
+    - [x] Redirect with success/error message
 
 ## 5. Views - Provider Dashboard
 
