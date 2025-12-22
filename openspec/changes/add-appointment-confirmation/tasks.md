@@ -108,32 +108,32 @@
 
 ## 9. Tests - Controllers
 
-- [ ] 9.1 Create `test/controllers/providers/appointments_controller_test.rb`
-  - [ ] Setup with provider user and pending appointment
-  - [ ] Test confirm action success
-    - [ ] Verify status changes to confirmed
-    - [ ] Verify confirmed_at is set
-    - [ ] Verify redirect and flash message
-  - [ ] Test decline action with reason
-    - [ ] Verify status changes to cancelled
-    - [ ] Verify declined_at and decline_reason are set
-    - [ ] Verify redirect and flash message
-  - [ ] Test decline action without reason (failure)
-    - [ ] Verify status remains unchanged
-    - [ ] Verify error flash message
-  - [ ] Test authorization (cannot confirm other provider's appointment)
-    - [ ] Verify ActiveRecord::RecordNotFound raised
-  - [ ] Test cannot confirm already cancelled appointment
-  - [ ] Test concurrent update handling (StaleObjectError)
-- [ ] 9.2 Update `test/controllers/customers/appointments_controller_test.rb`
-  - [ ] Test cancel action success
-    - [ ] Verify status changes to cancelled
-    - [ ] Verify declined_at is nil (customer cancel, not provider decline)
-    - [ ] Verify redirect and flash message
-  - [ ] Test cannot cancel completed appointment
-    - [ ] Verify status remains completed
-    - [ ] Verify error flash message
-  - [ ] Test authorization (cannot cancel other customer's appointment)
+- [x] 9.1 Create `test/controllers/providers/appointments_controller_test.rb`
+  - [x] Setup with provider user and pending appointment
+  - [x] Test confirm action success
+    - [x] Verify status changes to confirmed
+    - [x] Verify confirmed_at is set
+    - [x] Verify redirect and flash message
+  - [x] Test decline action with reason
+    - [x] Verify status changes to cancelled
+    - [x] Verify declined_at and decline_reason are set
+    - [x] Verify redirect and flash message
+  - [x] Test decline action without reason (failure)
+    - [x] Verify status remains unchanged
+    - [x] Verify error flash message
+  - [x] Test authorization (cannot confirm other provider's appointment)
+    - [x] Verify ActiveRecord::RecordNotFound raised
+  - [x] Test cannot confirm already cancelled appointment
+  - [x] Test concurrent update handling (StaleObjectError)
+- [x] 9.2 Update `test/controllers/customers/appointments_controller_test.rb`
+  - [x] Test cancel action success
+    - [x] Verify status changes to cancelled
+    - [x] Verify declined_at is nil (customer cancel, not provider decline)
+    - [x] Verify redirect and flash message
+  - [x] Test cannot cancel completed appointment
+    - [x] Verify status remains completed
+    - [x] Verify error flash message
+  - [x] Test authorization (cannot cancel other customer's appointment)
 
 ## 10. Tests - System
 
