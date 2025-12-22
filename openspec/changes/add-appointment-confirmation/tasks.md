@@ -137,28 +137,28 @@
 
 ## 10. Tests - System
 
-- [ ] 10.1 Create `test/system/appointment_confirmation_test.rb`
-  - [ ] Test provider confirms pending appointment
-    - [ ] Sign in as provider
-    - [ ] Visit dashboard
-    - [ ] Click confirm button
-    - [ ] Verify success message
-    - [ ] Verify appointment status changed
-  - [ ] Test provider declines appointment with reason
-    - [ ] Sign in as provider
-    - [ ] Visit dashboard
-    - [ ] Click decline button
-    - [ ] Fill in decline reason in modal
-    - [ ] Submit decline
-    - [ ] Verify success message
-    - [ ] Verify appointment status and decline_reason
-  - [ ] Test customer cancels appointment
-    - [ ] Sign in as customer
-    - [ ] Visit appointments page
-    - [ ] Click cancel button
-    - [ ] Confirm in dialog
-    - [ ] Verify success message
-    - [ ] Verify appointment status changed
+- [x] 10.1 Create `test/system/appointment_confirmation_test.rb`
+  - [x] Test provider confirms pending appointment
+    - [x] Sign in as provider
+    - [x] Visit dashboard
+    - [x] Click confirm button
+    - [x] Verify success message
+    - [x] Verify appointment status changed
+  - [x] Test provider declines appointment with reason
+    - [x] Sign in as provider
+    - [x] Visit dashboard
+    - [x] Click decline button
+    - [x] Fill in decline reason in modal
+    - [x] Submit decline
+    - [x] Verify success message
+    - [x] Verify appointment status and decline_reason
+  - [x] Test customer cancels appointment
+    - [x] Sign in as customer
+    - [x] Visit appointments page
+    - [x] Click cancel button
+    - [x] Confirm in dialog
+    - [x] Verify success message
+    - [x] Verify appointment status changed
 
 ## 11. Quality Assurance
 
