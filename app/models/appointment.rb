@@ -39,7 +39,9 @@ class Appointment < ApplicationRecord
   validate :scheduled_at_cannot_be_in_the_past, on: :create
   validates_with ProviderOfficeValidator, if: -> { provider_id? && office_id? }
 
+  validate :decline_reason_required_when_declined
   before_save :set_duration_from_work_schedule
+  before_save :set_confirmation_timestamp
 
   # Additional scopes (not provided by TemporalScopes)
   scope :by_status, ->(status) { where(status: status) }
@@ -64,6 +66,14 @@ class Appointment < ApplicationRecord
   # @return [TimePeriod] the appointment's time range
   def time_range
     TimePeriod.new(start_time: start_time, end_time: end_time)
+  end
+
+  def declined_by_provider?
+    cancelled? && declined_at.present?
+  end
+
+  def cancelled_by_customer?
+    cancelled? && declined_at.blank?
   end
 
   private
@@ -91,4 +101,15 @@ class Appointment < ApplicationRecord
       self.duration_minutes = DEFAULT_DURATION_MINUTES
     end
   end
-end
+
+  def decline_reason_required_when_declined
+    if cancelled? && declined_at.present? && decline_reason.blank?
+      errors.add(:decline_reason, "can't be blank when declined by provider")
+    end
+  end
+
+  def set_confirmation_timestamp
+    if status_changed?(from: :pending, to: :confirmed) && confirmed_at.nil?
+      self.confirmed_at = Time.current
+    end
+  endend
