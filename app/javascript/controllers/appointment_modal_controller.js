@@ -5,7 +5,7 @@ export default class extends Controller {
   static targets = ["modal", "title", "form"]
 
   connect() {
-    this.modalTarget.hidden = true
+    // Modal starts hidden via CSS class
   }
 
   open(event) {
@@ -14,12 +14,12 @@ export default class extends Controller {
 
     this.titleTarget.textContent = `Decline Appointment: ${appointmentTitle}`
     this.formTarget.action = `/providers/appointments/${appointmentId}/decline`
-    this.modalTarget.hidden = false
+    this.modalTarget.classList.remove("hidden")
   }
 
   close(event) {
-    event.preventDefault()
-    this.modalTarget.hidden = true
+    if (event) event.preventDefault()
+    this.modalTarget.classList.add("hidden")
     this.formTarget.reset() // Reset form fields on close
   }
 

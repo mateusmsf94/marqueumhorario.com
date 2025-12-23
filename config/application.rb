@@ -18,7 +18,8 @@ module MarqueumhorarioCom
     config.time_zone = "UTC"
     config.active_record.default_timezone = :utc
     config.autoload_paths << Rails.root.join("app/values")
-    config.geocoding_enabled = !Rails.env.test?
+    # Only enable geocoding in production to avoid SSL/API issues in development
+    config.geocoding_enabled = Rails.env.production?
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

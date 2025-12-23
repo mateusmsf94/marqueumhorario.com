@@ -39,9 +39,8 @@ class Customers::AppointmentsControllerTest < ActionDispatch::IntegrationTest
     # Ensure the appointment actually belongs to other_customer
     other_customer_appointment.update!(customer: other_customer, provider: @provider)
 
-    assert_raises ActiveRecord::RecordNotFound do
-      patch cancel_customers_appointment_url(other_customer_appointment)
-    end
+    patch cancel_customers_appointment_url(other_customer_appointment)
+    assert_response :not_found
     assert_equal "confirmed", other_customer_appointment.reload.status # Status should not have changed
   end
 end

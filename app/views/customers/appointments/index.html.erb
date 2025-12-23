@@ -39,7 +39,7 @@
     <% if @upcoming_appointments.any? %>
       <div class="space-y-4">
         <% @upcoming_appointments.each do |appointment| %>
-          <div class="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
+          <div id="<%= dom_id(appointment) %>" class="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 <h3 class="text-lg font-semibold text-gray-900"><%= appointment.title %></h3>

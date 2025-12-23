@@ -28,7 +28,5 @@ class Customers::AppointmentsController < ApplicationController
     else
       redirect_to customers_appointments_path, alert: "Failed to cancel appointment: #{@appointment.errors.full_messages.to_sentence}"
     end
-  rescue ActiveRecord::RecordNotFound
-    redirect_to customers_appointments_path, alert: "Appointment not found or you are not authorized to cancel it."
   end
 end

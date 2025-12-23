@@ -107,9 +107,9 @@ class User < ApplicationRecord
     return nil unless avatar.attached?
 
     case size
-    when :small then avatar.variant(resize_to_limit: [50, 50])
-    when :medium then avatar.variant(resize_to_limit: [200, 200])
-    when :large then avatar.variant(resize_to_limit: [400, 400])
+    when :small then avatar.variant(resize_to_limit: [ 50, 50 ])
+    when :medium then avatar.variant(resize_to_limit: [ 200, 200 ])
+    when :large then avatar.variant(resize_to_limit: [ 400, 400 ])
     end
   end
 

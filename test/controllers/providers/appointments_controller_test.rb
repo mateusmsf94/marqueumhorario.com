@@ -73,7 +73,7 @@ class Providers::AppointmentsControllerTest < ActionDispatch::IntegrationTest
     appointment_user1.update!(title: "User 1 update")
 
     # User 2 tries to confirm with an outdated lock_version
-    patch confirm_providers_appointment_url(appointment_user2)
+    patch confirm_providers_appointment_url(appointment_user2), params: { lock_version: appointment_user2.lock_version }
     assert_redirected_to providers_dashboard_path
     assert_equal "This appointment was modified by another user. Please review and try again.", flash[:alert]
     assert_equal "pending", @pending_appointment.reload.status # Status should not have changed
@@ -83,9 +83,8 @@ class Providers::AppointmentsControllerTest < ActionDispatch::IntegrationTest
     other_provider = users(:provider_jane)
     sign_in other_provider # Sign in as a different provider
 
-    assert_raises ActiveRecord::RecordNotFound do
-      patch confirm_providers_appointment_url(@pending_appointment)
-    end
+    patch confirm_providers_appointment_url(@pending_appointment)
+    assert_response :not_found
     assert_equal "pending", @pending_appointment.reload.status # Status should not have changed
   end
 
@@ -93,10 +92,9 @@ class Providers::AppointmentsControllerTest < ActionDispatch::IntegrationTest
     other_provider = users(:provider_jane)
     sign_in other_provider
 
-    assert_raises ActiveRecord::RecordNotFound do
-      patch decline_providers_appointment_url(@pending_appointment),
-            params: { appointment: { decline_reason: "Not my appointment" } }
-    end
+    patch decline_providers_appointment_url(@pending_appointment),
+          params: { appointment: { decline_reason: "Not my appointment" } }
+    assert_response :not_found
     assert_equal "pending", @pending_appointment.reload.status
   end
 
@@ -104,9 +102,8 @@ class Providers::AppointmentsControllerTest < ActionDispatch::IntegrationTest
     other_provider = users(:provider_jane)
     sign_in other_provider
 
-    assert_raises ActiveRecord::RecordNotFound do
-      patch cancel_providers_appointment_url(@pending_appointment)
-    end
+    patch cancel_providers_appointment_url(@pending_appointment)
+    assert_response :not_found
     assert_equal "pending", @pending_appointment.reload.status
   end
 end

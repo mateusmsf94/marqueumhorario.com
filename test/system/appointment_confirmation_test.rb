@@ -18,7 +18,9 @@ class AppointmentConfirmationTest < ApplicationSystemTestCase
     # Ensure the appointment is visible
     assert_selector "h3", text: @pending_appointment.title
 
-    click_on "Confirm"
+    within "##{dom_id(@pending_appointment)}" do
+      click_on "Confirm"
+    end
 
     assert_text "Appointment confirmed successfully."
     assert_equal "confirmed", @pending_appointment.reload.status
@@ -31,7 +33,9 @@ class AppointmentConfirmationTest < ApplicationSystemTestCase
 
     assert_selector "h3", text: @pending_appointment.title
 
-    click_on "Decline"
+    within "##{dom_id(@pending_appointment)}" do
+      click_on "Decline"
+    end
 
     # Fill in decline reason in the modal
     assert_selector "h3", text: "Decline Appointment: #{@pending_appointment.title}"
@@ -52,7 +56,9 @@ class AppointmentConfirmationTest < ApplicationSystemTestCase
 
     # Click the cancel button and accept the Turbo confirm dialog
     accept_confirm do
-      click_on "Cancel"
+      within "##{dom_id(@pending_appointment)}" do
+        click_on "Cancel"
+      end
     end
 
     assert_text "Appointment cancelled successfully."

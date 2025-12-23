@@ -3,7 +3,7 @@
 # Allows anonymous users to view provider profiles and availability.
 # Authentication is required only for booking appointments.
 class PublicProfilesController < ApplicationController
-  skip_before_action :authenticate_user!, only: [:show]
+  skip_before_action :authenticate_user!, only: [ :show ]
 
   def show
     @provider = User.find_by!(slug: params[:slug])

@@ -39,8 +39,10 @@ class Appointment < ApplicationRecord
   validate :scheduled_at_cannot_be_in_the_past, on: :create
   validates_with ProviderOfficeValidator, if: -> { provider_id? && office_id? }
 
+  # Validation: Ensures a reason is provided when a provider explicitly declines an appointment
   validate :decline_reason_required_when_declined
   before_save :set_duration_from_work_schedule
+  # Callback: Automatically sets confirmed_at/declined_at timestamps based on status changes
   before_save :set_confirmation_timestamp
 
   # Additional scopes (not provided by TemporalScopes)
@@ -125,4 +127,5 @@ class Appointment < ApplicationRecord
     if status_changed?(from: :pending, to: :confirmed) && confirmed_at.nil?
       self.confirmed_at = Time.current
     end
-  endend
+  end
+end

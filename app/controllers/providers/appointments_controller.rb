@@ -10,6 +10,8 @@ module Providers
         return
       end
 
+      @appointment.lock_version = params[:lock_version] if params[:lock_version]
+
       begin
         if @appointment.confirmed!
           # TODO: Send confirmation notification
@@ -28,8 +30,12 @@ module Providers
         return
       end
 
-      @appointment.assign_attributes(declined_at: Time.current, decline_reason: params[:appointment][:decline_reason])
-      if @appointment.cancelled!
+      if @appointment.update(
+        status: :cancelled,
+        declined_at: Time.current,
+        decline_reason: params[:appointment][:decline_reason],
+        confirmed_at: nil
+      )
         # TODO: Send declined notification
         redirect_to providers_dashboard_path, notice: "Appointment declined successfully."
       else
@@ -50,8 +56,6 @@ module Providers
 
     def set_appointment
       @appointment = current_user.provider_appointments.find(params[:id])
-    rescue ActiveRecord::RecordNotFound
-      redirect_to providers_dashboard_path, alert: "Appointment not found or you are not authorized to access it."
     end
 
     def decline_reason_present?

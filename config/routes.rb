@@ -44,7 +44,7 @@ Rails.application.routes.draw do
     get "/:slug", to: "public_profiles#show", as: :public_profile
 
     scope "/:slug" do
-      resources :bookings, only: [:new, :create]
+      resources :bookings, only: [ :new, :create ]
     end
   end
 end

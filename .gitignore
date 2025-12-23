@@ -39,3 +39,5 @@
 
 .gemini/
 gha-creds-*.json
+.env
+.mcp.json

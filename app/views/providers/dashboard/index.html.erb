@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-controller="appointment-modal">
   <!-- Header/Welcome Section -->
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">Welcome back,
@@ -110,7 +110,7 @@
 
       <div class="space-y-4">
         <% @pending_appointments.each do |appointment| %>
-          <div class="bg-white shadow rounded-lg p-6 border-l-4 border-yellow-400">
+          <div id="<%= dom_id(appointment) %>" class="bg-white shadow rounded-lg p-6 border-l-4 border-yellow-400">
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 <div class="flex items-center">
@@ -424,7 +424,6 @@
 
 <!-- Decline Reason Modal -->
 <div
-  data-controller="appointment-modal"
   data-appointment-modal-target="modal"
   class="
     hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full
@@ -443,7 +442,7 @@
       Decline Appointment
     </h3>
     <div class="mt-2">
-      <%= form_with url: "#", method: :patch, data: { appointment_modal_target: "form" } do |form| %>
+      <%= form_with scope: :appointment, url: "#", method: :patch, data: { appointment_modal_target: "form" } do |form| %>
         <div class="mb-4">
           <%= form.label :decline_reason, "Reason for Decline", class: "block text-sm font-medium text-gray-700" %>
           <%= form.text_area :decline_reason,
